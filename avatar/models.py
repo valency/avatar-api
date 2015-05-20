@@ -11,7 +11,7 @@ class Point(models.Model):
 
 
 class Sample(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     p = models.ForeignKey(Point)
     t = models.DateTimeField()
     speed = models.IntegerField()
@@ -25,7 +25,7 @@ class Sample(models.Model):
 
 
 class Intersection(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     p = models.ForeignKey(Point)
 
     def __str__(self):
@@ -33,7 +33,7 @@ class Intersection(models.Model):
 
 
 class Road(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     name = models.CharField()
     type = models.IntegerField()
     length = models.IntegerField()
@@ -46,7 +46,7 @@ class Road(models.Model):
 
 
 class Trace(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     p = models.ManyToManyField(Sample)
 
     def __str__(self):
@@ -54,7 +54,7 @@ class Trace(models.Model):
 
 
 class PathFragment(models.Model):
-    rid = models.CharField()
+    rid = models.ForeignKey(Road.id)
     p = models.CharField()
 
     def __str__(self):
@@ -62,7 +62,7 @@ class PathFragment(models.Model):
 
 
 class Path(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     road = models.ManyToManyField(PathFragment)
 
     def __str__(self):
@@ -70,7 +70,7 @@ class Path(models.Model):
 
 
 class Trajectory(models.Model):
-    id = models.CharField()
+    id = models.CharField(max_length=36, primary_key=True)
     taxi = models.CharField()
     trace = models.ForeignKey(Trace)
     path = models.ForeignKey(Path)
