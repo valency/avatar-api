@@ -17,7 +17,7 @@ class Sample(models.Model):
     speed = models.IntegerField()
     angle = models.IntegerField()
     occupy = models.IntegerField()
-    meta = models.CharField()
+    meta = models.CharField(max_length=255)
     src = models.IntegerField()
 
     def __str__(self):
@@ -34,7 +34,7 @@ class Intersection(models.Model):
 
 class Road(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    name = models.CharField()
+    name = models.CharField(max_length=255)
     type = models.IntegerField()
     length = models.IntegerField()
     speed = models.IntegerField()
@@ -55,7 +55,7 @@ class Trace(models.Model):
 
 class PathFragment(models.Model):
     rid = models.ForeignKey(Road.id)
-    p = models.CharField()
+    p = models.TextField(max_length=65535)
 
     def __str__(self):
         return self.rid
@@ -71,7 +71,7 @@ class Path(models.Model):
 
 class Trajectory(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    taxi = models.CharField()
+    taxi = models.CharField(max_length=255)
     trace = models.ForeignKey(Trace)
     path = models.ForeignKey(Path)
 
