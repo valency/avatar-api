@@ -14,6 +14,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'polls',
 )
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -49,10 +50,10 @@ WSGI_APPLICATION = 'api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'localhost',
+        'NAME': 'template1',
         'USER': 'postgres',
         'PASSWORD': 'avatar',
-        'HOST': 'nicpu3.cse.ust.hk',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
