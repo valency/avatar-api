@@ -54,11 +54,11 @@ class Trace(models.Model):
 
 
 class PathFragment(models.Model):
-    rid = models.ForeignKey(Road.id)
+    road = models.ForeignKey(Road)
     p = models.TextField(max_length=65535)
 
     def __str__(self):
-        return self.rid
+        return str(self.road)
 
 
 class Path(models.Model):
