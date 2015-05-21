@@ -5,6 +5,8 @@ import views
 
 router = routers.DefaultRouter()
 router.register(r'trajectories', views.TrajectoryViewSet)
+router.register(r'roads', views.RoadViewSet)
+router.register(r'intersections', views.IntersectionViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

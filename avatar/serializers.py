@@ -9,6 +9,12 @@ class PointSerializer(serializers.ModelSerializer):
         fields = ('lat', 'lng')
 
 
+class SampleMetaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SampleMeta
+        fields = ('key', 'value')
+
+
 class SampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sample
