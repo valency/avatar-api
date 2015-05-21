@@ -25,7 +25,7 @@ class Sample(models.Model):
     speed = models.IntegerField(null=True)
     angle = models.IntegerField(null=True)
     occupy = models.IntegerField(null=True)
-    meta = models.ManyToManyField(SampleMeta, null=True)
+    meta = models.ManyToManyField(SampleMeta)
     src = models.IntegerField(null=True)
 
     def __str__(self):
@@ -46,8 +46,8 @@ class Road(models.Model):
     type = models.IntegerField(null=True)
     length = models.IntegerField(null=True)
     speed = models.IntegerField(null=True)
-    p = models.ManyToManyField(Point, null=True)
-    intersection = models.ManyToManyField(Intersection, null=True)
+    p = models.ManyToManyField(Point)
+    intersection = models.ManyToManyField(Intersection)
 
     def __str__(self):
         return self.id
@@ -55,7 +55,7 @@ class Road(models.Model):
 
 class Trace(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    p = models.ManyToManyField(Sample, null=True)
+    p = models.ManyToManyField(Sample)
 
     def __str__(self):
         return self.id
@@ -71,7 +71,7 @@ class PathFragment(models.Model):
 
 class Path(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    road = models.ManyToManyField(PathFragment, null=True)
+    road = models.ManyToManyField(PathFragment)
 
     def __str__(self):
         return self.id
