@@ -4,5 +4,5 @@ import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    url(r'^traj/add', views.create_traj, name='traj/add'),
+    url(r'^api/traj/add', views.create_traj, name='api/traj/add'),
 ]
