@@ -45,6 +45,10 @@ TEMPLATES = [
     },
 ]
 WSGI_APPLICATION = 'api.wsgi.application'
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'PAGE_SIZE': 10
+}
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
