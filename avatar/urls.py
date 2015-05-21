@@ -10,7 +10,7 @@ router.register(r'intersections', views.IntersectionViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^api/traj/201', views.add_traj_from_local_file, name='api/traj/201'),
     # url(r'^$', views.index, name='index'),
-    # url(r'^api/traj/add', views.create_traj, name='api/traj/add'),
 ]

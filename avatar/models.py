@@ -1,6 +1,8 @@
+import csv
+import datetime
+
 from django.db import models
 
-# --- Trajectory Related --- #
 
 class Point(models.Model):
     lat = models.FloatField()
@@ -85,3 +87,26 @@ class Trajectory(models.Model):
 
     def __str__(self):
         return self.id
+
+    def from_csv(self, src, header):
+        self.trace = Trace(id=self.id, p=None)
+        self.path = None
+        try:
+            f = open(src, "rb")
+            reader = csv.reader(f)
+            for row in reader:
+                try:
+                    sampleid = row[header.index("id")]
+                    p = Point(lat=float(row[header.index("lat")]), lng=float(row[header.index("lng")]))
+                    t = datetime.datetime.strptime(row[header.index("t")], "%Y-%m-%d %H:%M:%S")
+                    speed = int(row[header.index("speed")])
+                    angle = int(row[header.index("angle")])
+                    occupy = int(row[header.index("occupy")])
+                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, meta=None, src=0)
+                    self.trace.p.add(sample)
+                except TypeError:
+                    continue
+            f.close()
+        except IOError:
+            return False
+        return True
