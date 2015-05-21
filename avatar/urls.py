@@ -1,6 +1,10 @@
 from django.conf.urls import url
+from rest_framework import routers
 
 import views
+
+router = routers.DefaultRouter()
+router.register(r'trajectories', views.TrajectoryViewSet)
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),

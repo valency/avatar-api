@@ -2,6 +2,7 @@ from rest_framework.renderers import JSONRenderer
 from django.utils.six import BytesIO
 from rest_framework.parsers import JSONParser
 from django.http import HttpResponse
+from rest_framework import viewsets
 
 from serializers import *
 
@@ -11,6 +12,11 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
+
+
+class TrajectoryViewSet(viewsets.ModelViewSet):
+    queryset = Trajectory.objects.all()
+    serializer_class = TrajectorySerializer
 
 
 def index(request):
