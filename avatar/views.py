@@ -34,7 +34,7 @@ def resp(status, content):
 
 
 def add_traj_from_local_file(request):
-    if request.data['taxi'] and request.data['src'] and request.data['header']:
+    if 'taxi' in request.POST and 'src' in request.POST and 'header' in request.POST:
         traj = Trajectory(id=uuid.uuid4(), taxi=request.data['taxi'])
         try:
             traj.from_csv(request.data['src'], request.data['header'].split(","))
