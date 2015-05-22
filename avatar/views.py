@@ -10,9 +10,7 @@ from serializers import *
 class JSONResponse(HttpResponse):
     def __init__(self, data, **kwargs):
         content = JSONRenderer().render(data)
-        kwargs['Content-Type'] = 'application/json;charset=utf-8'
-        kwargs['Access-Control-Allow-Origin'] = '*'
-        kwargs['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        kwargs['content_type'] = 'application/json;charset=utf-8'
         super(JSONResponse, self).__init__(content, **kwargs)
 
 
