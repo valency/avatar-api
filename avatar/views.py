@@ -43,7 +43,7 @@ def add_traj_from_local_file(request):
             return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
         return resp(200, traj)
     else:
-        return resp(404, "parameter 'taxi' not provided")
+        return resp(404, "parameter not correct")
 
 
 
