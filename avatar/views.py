@@ -29,8 +29,9 @@ class IntersectionViewSet(viewsets.ModelViewSet):
     serializer_class = IntersectionSerializer
 
 
-def resp(status, content):
-    return JSONResponse({"status": status, "content": content})
+def resp(request, status, content):
+    data = '%s(%s);' % (request.REQUEST['callback'], {"status": status, "content": content})
+    return JSONResponse(data)
 
 
 def add_traj_from_local_file(request):
@@ -40,10 +41,10 @@ def add_traj_from_local_file(request):
             traj.from_csv(request.data['src'], request.data['header'].split(","))
             traj.save()
         except IOError as e:
-            return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
-        return resp(200, traj)
+            return resp(request, 500, "io error ({0}): {1}".format(e.errno, e.strerror))
+        return resp(request, 200, traj)
     else:
-        return resp(404, "parameter not correct")
+        return resp(request, 404, "parameter not correct")
 
 
 
