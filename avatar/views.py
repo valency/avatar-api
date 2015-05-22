@@ -10,7 +10,7 @@ from serializers import *
 class JSONResponse(HttpResponse):
     def __init__(self, data, **kwargs):
         content = JSONRenderer().render(data)
-        kwargs['content_type'] = 'text/javascript'
+        kwargs['content_type'] = 'application/json;charset=utf-8'
         super(JSONResponse, self).__init__(content, **kwargs)
 
 
@@ -29,9 +29,8 @@ class IntersectionViewSet(viewsets.ModelViewSet):
     serializer_class = IntersectionSerializer
 
 
-def resp(request, status, content):
-    data = '%s(%s);' % (request.REQUEST['callback'], {"status": status, "content": content})
-    return JSONResponse(data)
+def resp(status, content):
+    return JSONResponse({"status": status, "content": content})
 
 
 def add_traj_from_local_file(request):
@@ -41,10 +40,10 @@ def add_traj_from_local_file(request):
             traj.from_csv(request.data['src'], request.data['header'].split(","))
             traj.save()
         except IOError as e:
-            return resp(request, 500, "io error ({0}): {1}".format(e.errno, e.strerror))
-        return resp(request, 200, traj)
+            return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
+        return resp(200, traj)
     else:
-        return resp(request, 404, "parameter not correct")
+        return resp(404, "parameter not correct")
 
 
 
