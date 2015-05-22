@@ -34,35 +34,38 @@ def resp(status, content):
 
 
 def add_traj_from_local_file(request):
-    traj = Trajectory(id=uuid.uuid4(), taxi=request.data['taxi'])
-    try:
-        traj.from_csv(request.data['src'], request.data['header'].split(","))
-        traj.save()
-    except IOError as e:
-        return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
-    return resp(200, traj)
+    if request.data['taxi'] and request.data['src'] and request.data['header']:
+        traj = Trajectory(id=uuid.uuid4(), taxi=request.data['taxi'])
+        try:
+            traj.from_csv(request.data['src'], request.data['header'].split(","))
+            traj.save()
+        except IOError as e:
+            return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
+        return resp(200, traj)
+    else:
+        return resp(404, "parameter 'taxi' not provided")
 
 
 
 
-    # data = JSONParser().parse(BytesIO(request.data['traj']))
-    # serializer = TrajectorySerializer(data=data)
-    # if serializer.is_valid():
-    #     return resp(200, serializer.validated_data)
+        # data = JSONParser().parse(BytesIO(request.data['traj']))
+        # serializer = TrajectorySerializer(data=data)
+        # if serializer.is_valid():
+        #     return resp(200, serializer.validated_data)
 
 
-    # try:
-    #     src = json.loads(request.POST['traj'])
-    #     trace = Trace(id=uuid.uuid4())
-    #     for p in src["trace"]["p"]:
-    #         point = Point(lat=p["p"]["lat"], lng=p["p"]["lng"])
-    #         sample = Sample(id=p["id"], p=point, t=p["t"], speed=p["speed"], angle=p["angle"], occupy=p["occupy"], meta=p["meta"], src=p["src"])
-    #         trace.p.add(sample)
-    #     traj = Trajectory(id=uuid.uuid4(), taxi=src["taxi"], trace=trace)
-    #     traj.save()
-    #
-    # except TypeError:
-    #     return HttpResponse(Capsule.tojson(500, "parse error"), mimetype="application/json")
+        # try:
+        #     src = json.loads(request.POST['traj'])
+        #     trace = Trace(id=uuid.uuid4())
+        #     for p in src["trace"]["p"]:
+        #         point = Point(lat=p["p"]["lat"], lng=p["p"]["lng"])
+        #         sample = Sample(id=p["id"], p=point, t=p["t"], speed=p["speed"], angle=p["angle"], occupy=p["occupy"], meta=p["meta"], src=p["src"])
+        #         trace.p.add(sample)
+        #     traj = Trajectory(id=uuid.uuid4(), taxi=src["taxi"], trace=trace)
+        #     traj.save()
+        #
+        # except TypeError:
+        #     return HttpResponse(Capsule.tojson(500, "parse error"), mimetype="application/json")
 
 #
 # def index(request):
