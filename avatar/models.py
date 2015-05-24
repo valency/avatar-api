@@ -89,27 +89,29 @@ class Trajectory(models.Model):
         return self.id
 
     def from_csv(self, src, header):
-        self.trace = Trace(id=self.id)
-        self.path = None
+        trace = Trace(id=self.id)
         try:
             f = open(src, "rb")
             reader = csv.reader(f)
             for row in reader:
                 try:
                     sampleid = row[header.index("id")]
-                    lat = float(row[header.index("lat")])
-                    lng = float(row[header.index("lng")])
+                    p = Point(lat=float(row[header.index("lat")]), lng=float(row[header.index("lng")]))
+                    p.save()
                     t = datetime.datetime.strptime(row[header.index("t")], "%Y-%m-%d %H:%M:%S")
                     speed = int(row[header.index("speed")])
                     angle = int(row[header.index("angle")])
                     occupy = int(row[header.index("occupy")])
-                    sample = Sample(id=sampleid, p=Point(lat, lng), t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
                     sample.save()
-                    self.trace.p.add(sample)
+                    trace.p.add(sample)
                 except TypeError:
                     continue
             f.close()
-            self.save()
         except IOError:
             return False
+        trace.save()
+        self.trace = trace
+        self.path = None
+        self.save()
         return True
