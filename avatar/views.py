@@ -37,7 +37,7 @@ def resp(status, content):
 
 def add_traj_from_local_file(request):
     if 'taxi' in request.POST and 'src' in request.POST and 'header' in request.POST:
-        traj = Trajectory(id=uuid.uuid4(), taxi=request.POST['taxi'])
+        traj = Trajectory(id=str(uuid.uuid4()), taxi=request.POST['taxi'])
         try:
             traj.from_csv(Settings.CSV_UPLOAD_DIR + request.POST['src'], request.POST['header'].split(","))
         except IOError as e:
