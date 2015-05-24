@@ -89,7 +89,7 @@ class Trajectory(models.Model):
         return self.id
 
     def from_csv(self, src, header):
-        self.trace = Trace(id=self.id, p=None)
+        self.trace = Trace(id=self.id)
         self.path = None
         try:
             f = open(src, "rb")
@@ -102,7 +102,7 @@ class Trajectory(models.Model):
                     speed = int(row[header.index("speed")])
                     angle = int(row[header.index("angle")])
                     occupy = int(row[header.index("occupy")])
-                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, meta=None, src=0)
+                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
                     self.trace.p.add(sample)
                 except TypeError:
                     continue
