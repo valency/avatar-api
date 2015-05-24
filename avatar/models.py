@@ -90,6 +90,7 @@ class Trajectory(models.Model):
 
     def from_csv(self, src, header):
         trace = Trace(id=self.id)
+        trace.save()
         try:
             f = open(src, "rb")
             reader = csv.reader(f)
