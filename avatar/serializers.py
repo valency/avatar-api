@@ -17,6 +17,7 @@ class SampleMetaSerializer(serializers.ModelSerializer):
 
 class SampleSerializer(serializers.ModelSerializer):
     p = PointSerializer()
+    t = serializers.DateTimeField(format="%Y-%m-%d %X")
     meta = SampleMetaSerializer(many=True)
 
     class Meta:
