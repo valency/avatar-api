@@ -4,6 +4,8 @@ from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
 from rest_framework import viewsets
 
+from settings import Settings
+
 from serializers import *
 
 
@@ -35,9 +37,9 @@ def resp(status, content):
 
 def add_traj_from_local_file(request):
     if 'taxi' in request.POST and 'src' in request.POST and 'header' in request.POST:
-        traj = Trajectory(id=uuid.uuid4(), taxi=request.data['taxi'])
+        traj = Trajectory(id=uuid.uuid4(), taxi=request.POST['taxi'])
         try:
-            traj.from_csv(request.data['src'], request.data['header'].split(","))
+            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.POST['src'], request.POST['header'].split(","))
             traj.save()
         except IOError as e:
             return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
