@@ -52,8 +52,8 @@ class PathSerializer(serializers.ModelSerializer):
 
 
 class TrajectorySerializer(serializers.ModelSerializer):
-    trace = TraceSerializer(many=True, read_only=True)
-    path = PathSerializer(many=True, read_only=True)
+    trace = TraceSerializer()
+    path = PathSerializer()
 
     class Meta:
         model = Trajectory
