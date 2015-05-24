@@ -97,16 +97,19 @@ class Trajectory(models.Model):
             for row in reader:
                 try:
                     sampleid = row[header.index("id")]
-                    p = Point(lat=float(row[header.index("lat")]), lng=float(row[header.index("lng")]))
+                    lat = float(row[header.index("lat")])
+                    lng = float(row[header.index("lng")])
                     t = datetime.datetime.strptime(row[header.index("t")], "%Y-%m-%d %H:%M:%S")
                     speed = int(row[header.index("speed")])
                     angle = int(row[header.index("angle")])
                     occupy = int(row[header.index("occupy")])
-                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                    sample = Sample(id=sampleid, p=Point(lat, lng), t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                    sample.save()
                     self.trace.p.add(sample)
                 except TypeError:
                     continue
             f.close()
+            self.save()
         except IOError:
             return False
         return True
