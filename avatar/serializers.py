@@ -52,6 +52,9 @@ class PathSerializer(serializers.ModelSerializer):
 
 
 class TrajectorySerializer(serializers.ModelSerializer):
+    trace = TraceSerializer(many=True, read_only=True)
+    path = PathSerializer(many=True, read_only=True)
+
     class Meta:
         model = Trajectory
         fields = ('id', 'taxi', 'trace', 'path')
