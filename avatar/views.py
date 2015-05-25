@@ -45,7 +45,7 @@ def add_traj_from_local_file(request):
             return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
         return resp(200, TrajectorySerializer(traj).data)
     else:
-        return resp(404, "parameter not correct")
+        return resp(500, "parameter not correct")
 
 
 def get_traj_by_id(request):
@@ -54,9 +54,9 @@ def get_traj_by_id(request):
             traj = Trajectory.objects.get(id=request.GET['id'])
             return resp(200, TrajectorySerializer(traj).data)
         except ObjectDoesNotExist:
-            return
+            return resp(404, "trajectory not exist")
     else:
-        return resp(404, "parameter not correct")
+        return resp(500, "parameter not correct")
 
 
 def remove_traj_by_id(request):
@@ -65,7 +65,7 @@ def remove_traj_by_id(request):
         traj.delete()
         return resp(200, "success")
     else:
-        return resp(404, "parameter not correct")
+        return resp(500, "parameter not correct")
 
 
 def get_all_traj_id(request):
