@@ -49,7 +49,7 @@ def add_traj_from_local_file(request):
 
 def get_traj_by_id(request):
     if 'id' in request.GET:
-        traj = Trajectory.objects.filter(id=request.GET['id'])
+        traj = Trajectory.objects.filter(id=str(request.GET['id']))
         return resp(200, TrajectorySerializer(traj).data)
     else:
         return resp(404, "parameter not correct")
@@ -57,7 +57,7 @@ def get_traj_by_id(request):
 
 def remove_traj_by_id(request):
     if 'id' in request.GET:
-        traj = Trajectory.objects.filter(id=request.GET['id'])
+        traj = Trajectory.objects.filter(id=str(request.GET['id']))
         traj.delete()
         return resp(200, "success")
     else:
