@@ -73,3 +73,9 @@ class TrajectorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Trajectory
         fields = ('id', 'taxi', 'trace', 'path')
+
+
+class TrajectoryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trajectory
+        fields = ('id', 'taxi', 'trace', 'path')
