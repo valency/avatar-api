@@ -3,6 +3,7 @@ import uuid
 from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
 from rest_framework import viewsets
+from django.core.exceptions import ObjectDoesNotExist
 
 from settings import Settings
 from serializers import *
@@ -49,8 +50,11 @@ def add_traj_from_local_file(request):
 
 def get_traj_by_id(request):
     if 'id' in request.GET:
-        traj = Trajectory.objects.get(id=request.GET['id'])
-        return resp(200, TrajectorySerializer(traj).data)
+        try:
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            return resp(200, TrajectorySerializer(traj).data)
+        except ObjectDoesNotExist:
+            return
     else:
         return resp(404, "parameter not correct")
 
