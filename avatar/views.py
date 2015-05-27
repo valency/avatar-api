@@ -40,7 +40,7 @@ def add_traj_from_local_file(request):
         traj = Trajectory(id=str(uuid.uuid4()), taxi=request.POST['taxi'])
         traj.save()
         try:
-            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.POST['src'], request.POST['header'].split(","))
+            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.POST['src'], request.POST['taxi'], request.POST['header'].split(","))
         except IOError as e:
             return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
         return resp(200, TrajectorySerializer(traj).data)

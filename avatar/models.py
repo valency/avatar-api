@@ -88,7 +88,7 @@ class Trajectory(models.Model):
     def __str__(self):
         return self.id
 
-    def from_csv(self, src, header):
+    def from_csv(self, src, taxi, header):
         trace = Trace(id=self.id)
         trace.save()
         try:
@@ -96,22 +96,24 @@ class Trajectory(models.Model):
             reader = csv.reader(f)
             for row in reader:
                 try:
-                    sampleid = row[header.index("id")]
-                    p = Point(lat=float(row[header.index("lat")]), lng=float(row[header.index("lng")]))
-                    p.save()
-                    t = datetime.datetime.strptime(row[header.index("t")], "%Y-%m-%d %H:%M:%S")
-                    speed = int(row[header.index("speed")])
-                    angle = int(row[header.index("angle")])
-                    occupy = int(row[header.index("occupy")])
-                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
-                    sample.save()
-                    trace.p.add(sample)
+                    if taxi == row[header.index("taxi")]:
+                        sampleid = row[header.index("id")]
+                        p = Point(lat=float(row[header.index("lat")]), lng=float(row[header.index("lng")]))
+                        p.save()
+                        t = datetime.datetime.strptime(row[header.index("t")], "%Y-%m-%d %H:%M:%S")
+                        speed = int(row[header.index("speed")])
+                        angle = int(row[header.index("angle")])
+                        occupy = int(row[header.index("occupy")])
+                        sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                        sample.save()
+                        trace.p.add(sample)
                 except TypeError:
                     continue
             f.close()
         except IOError:
             return False
         trace.save()
+        self.taxi = taxi
         self.trace = trace
         self.path = None
         self.save()
