@@ -16,6 +16,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'mptt',
     'avatar'
 )
 MIDDLEWARE_CLASSES = (

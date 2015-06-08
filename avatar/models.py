@@ -2,6 +2,7 @@ import csv
 import datetime
 
 from django.db import models
+from mptt.models import MPTTModel, TreeForeignKey
 
 
 class Point(models.Model):
@@ -118,3 +119,33 @@ class Trajectory(models.Model):
         self.path = None
         self.save()
         return True
+
+
+class Rect(models.Model):
+    lat = models.FloatField()
+    lng = models.FloatField()
+    width = models.FloatField()
+    height = models.FloatField()
+
+    def __str__(self):
+        return "(" + str(self.lat) + "," + str(self.lng) + "," + str(self.height) + "," + str(self.width) + ")"
+
+    def contains_road(self, road):
+        for p in road.p:
+            if self.contains_road_point(p):
+                return True
+        return False
+
+    def contains_road_point(self, p):
+        if self.lng <= p.lng < self.lng + self.width and self.lat <= p.lat < self.lat + self.height:
+            return True
+        else:
+            return False
+
+
+class CloST(MPTTModel):
+    bounding_box = models.ForeignKey(Rect)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+
+    class MPTTMeta:
+        order_insertion_by = ['bounding_box']
