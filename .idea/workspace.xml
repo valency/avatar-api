@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="74dd06af-788c-4cd9-a79c-b30852d83985" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/models.py" afterPath="$PROJECT_DIR$/avatar/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/serializers.py" afterPath="$PROJECT_DIR$/avatar/serializers.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/settings.py" afterPath="$PROJECT_DIR$/api/settings.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/urls.py" afterPath="$PROJECT_DIR$/avatar/urls.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/views.py" afterPath="$PROJECT_DIR$/avatar/views.py" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/0001_initial.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/0002_auto_20150608_0933.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/__init__.py" afterPath="" />
     </list>
     <ignored path="avatar-api.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +28,8 @@
       <file leaf-file-name="models.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/avatar/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.44012442">
-              <caret line="148" column="4" selection-start-line="148" selection-start-column="4" selection-end-line="148" selection-end-column="16" />
+            <state vertical-scroll-proportion="-2.6625195">
+              <caret line="15" column="0" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -136,7 +134,7 @@
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="65" />
-    <option name="y" value="24" />
+    <option name="y" value="-744" />
     <option name="width" value="1301" />
     <option name="height" value="744" />
   </component>
@@ -400,7 +398,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="24" width="1301" height="744" extended-state="6" />
+    <frame x="65" y="-744" width="1301" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -891,8 +889,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/avatar/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.44012442">
-          <caret line="148" column="4" selection-start-line="148" selection-start-column="4" selection-end-line="148" selection-end-column="16" />
+        <state vertical-scroll-proportion="-2.6625195">
+          <caret line="15" column="0" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
