@@ -15,4 +15,7 @@ urlpatterns = [
     url(r'^api/traj/202', views.get_traj_by_id),
     url(r'^api/traj/203', views.remove_traj_by_id),
     url(r'^api/traj/204', views.get_all_traj_id),
+    url(r'^api/traj/205', views.create_index),
+#=======
+#>>>>>>> origin/master
 ]

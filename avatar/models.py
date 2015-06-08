@@ -3,6 +3,8 @@ import datetime
 
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
+from .clost import clost
+
 
 
 class Point(models.Model):
@@ -149,3 +151,17 @@ class CloST(MPTTModel):
 
     class MPTTMeta:
         order_insertion_by = ['bounding_box']
+
+
+class Yohoho(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    s_time = models.DateTimeField()
+    e_time = models.DateTimeField()
+    s_lat = models.FloatField()
+    e_lat = models.FloatField()
+    s_lng = models.FloatField()
+    e_lng = models.FloatField()
+    ls_traj = []
+    pointer = models.ManyToManyField("self")
+    def __str__(self):
+        return self.id

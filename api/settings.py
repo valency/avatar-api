@@ -73,7 +73,11 @@ DATABASES = {
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Hong_Kong'
+#<<<<<<< HEAD
+TIME_ZONE = 'Europe/London'
+#=======
+#TIME_ZONE = 'Asia/Hong_Kong'
+#>>>>>>> origin/master
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True

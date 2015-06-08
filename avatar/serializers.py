@@ -79,3 +79,19 @@ class TrajectoryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trajectory
         fields = ('id', 'taxi', 'trace', 'path')
+#<<<<<<< HEAD
+#***************************************************************
+class RecursiveField(serializers.Serializer):
+    def to_representation(self, value):
+        serializer = self.parent.parent.__class__(value, context=self.context)
+        return serializer.data
+
+
+class RSpanningTreeSerializer(serializers.ModelSerializer):
+    pointer = RecursiveField(many=True)
+    class Meta:
+        model = Yohoho
+        fields = ('pointer', 'id', 's_time', 'e_time', 's_lat', 'e_lat', 's_lng', 'e_lng', 'ls_traj')
+#***************************************************************
+#=======
+#>>>>>>> origin/master
