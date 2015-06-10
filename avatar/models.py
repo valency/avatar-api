@@ -148,6 +148,8 @@ class Rect(models.Model):
 class CloST(MPTTModel):
     bounding_box = models.ForeignKey(Rect)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+    haschild=models.IntegerField(null=True)
+    ls_traj=[]
 
     class MPTTMeta:
         order_insertion_by = ['bounding_box']

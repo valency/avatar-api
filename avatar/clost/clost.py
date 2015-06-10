@@ -325,29 +325,34 @@ class RSpanningTree:
                 while k<num_sample:
                     #lat=float(s_trace.p[k].p.lat)
                     #lng=float(s_trace.p[k].p.lng)
-                    lat=float(set_sample[k].p.lat)
-                    lng=float(set_sample[k].p.lng)
-                    t_raw1=str(set_sample[k].t).split('+')
+                    lat=copy.copy(float(set_sample[k].p.lat))
+                    lng=copy.copy(float(set_sample[k].p.lng))
+                    t_raw1=copy.copy(str(set_sample[k].t).split('+'))
                     t_raw2=copy.copy(t_raw1[0])
-                    raw_time = RSpanningTree.time_split(t_raw2)
+                    raw_time = copy.copy(RSpanningTree.time_split(t_raw2))
+                    #return lat,lng
                     #raw_time = RSpanningTree.time_split(set_sample[k].t)
-                    k=k+1
-                    if i==0:
-                        minlat = lat
-                        minlng = lng
-                        maxlat = lat
-                        maxlng = lng
-                        mindate = copy.copy(raw_time[0])
-                        maxdate = copy.copy(raw_time[0])
+                    if k==0:
+                        if i==0:
+                            minlat = copy.copy(lat)
+                            minlng = copy.copy(lng)
+                            maxlat = copy.copy(lat)
+                            maxlng = copy.copy(lng)
+                            mindate = copy.copy(raw_time[0])
+                            maxdate = copy.copy(raw_time[0])
+                        #if k==18:
                     #i = i + 1
+                    #if k==18:
+                        #return minlng,minlat
+                    k=k+1
                     if lat < minlat:
-                        minlat = lat
+                        minlat = copy.copy(lat)
                     if lat > maxlat:
-                        maxlat = lat
+                        maxlat = copy.copy(lat)
                     if lng < minlng:
-                        minlng = lng
+                        minlng = copy.copy(lng)
                     if lng > maxlng:
-                        maxlng = lng
+                        maxlng = copy.copy(lng)
                     if raw_time[0][1] < mindate[1]:
                         mindate = copy.copy(raw_time[0])
                     elif raw_time[0][1] == mindate[1]:
@@ -358,6 +363,7 @@ class RSpanningTree:
                     elif raw_time[0][1] == maxdate[1]:
                         if raw_time[0][2] > maxdate[2]:
                             maxdate = copy.copy(raw_time[0])
+                    #k=k+1
                 j=j+1
             i=i+1
 
@@ -438,8 +444,176 @@ class RSpanningTree:
 #*******************************************#*******************************************
 #*******************************************#*******************************************
     @staticmethod
+    def addtoquadtree(root, list_traj, thr, occupancy):
+        init_rect=root.bounding_box
+        #sub00=avatar.models.Rect()
+        ls_lat=[]#save the lattitude of every sample saved in this node
+        ls_lng=[]
+        ls_sample=[]
+        num_traj = len(list_traj)
+        # rect11=avatar.models.Rect(lat=11,lng=11,width=11,height=11)
+        # rect11.save()
+        # rect12=avatar.models.Rect(lat=12,lng=12,width=12,height=12)
+        # rect12.save()
+        # rect21=avatar.models.Rect(lat=21,lng=21,width=21,height=21)
+        # rect21.save()
+        # rect22=avatar.models.Rect(lat=22,lng=22,width=22,height=22)
+        # rect22.save()
+        # chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0)
+        # chil11.save()
+        # chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0)
+        # chil12.save()
+        # chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0)
+        # chil21.save()
+        # chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0)
+        # chil22.save()
+        # chil11.parent=root
+        # chil11.save()
+        # root.save()
+        # chil12.parent=root
+        # chil12.save()
+        # root.save()
+        # chil21.parent=root
+        # chil21.save()
+        # root.save()
+        # chil22.parent=root
+        # chil22.save()
+        # root.save()
+        # root.haschild=1
+        # root.save()
+        # return root
+
+        #return num_traj
+        i=0
+        while i<num_traj:
+            s = list_traj[i]
+            j = 0
+            num_trace = 1
+            while j < num_trace:
+                s_trace = s.trace
+                set_sample = s_trace.p.all()
+                num_sample = len(set_sample)
+                #return init_rect.lat,init_rect.lng,init_rect.height,init_rect.width
+                k=0
+                while k<num_sample:
+                    if set_sample[k].p.lat>=init_rect.lat+init_rect.height:
+                        return k,'1 stuck'
+                        continue
+                    if set_sample[k].p.lng>=init_rect.lng+init_rect.width:
+                        return k,'2 stuck', 'p.lng='+str(set_sample[k].p.lng), '*+*= '+str(init_rect.lng+init_rect.width)
+                        continue
+                    if set_sample[k].p.lat<init_rect.lat:
+                        return k,'3 stuck'
+                        continue
+                    if set_sample[k].p.lng<init_rect.lng:
+                        return k,'4 stuck'
+                        continue
+                    ls_sample.append(set_sample[k])
+                    #return len(ls_sample)
+                    occupancy=occupancy+1
+                    if occupancy<thr:#if this node hasn't been full
+                        root.ls_traj.append([s.id,s.taxi])
+                        ls_lat.append(set_sample[k].p.lat)
+                        ls_lng.append(set_sample[k].p.lng)
+                    else:#if this node has been full
+                        sort_ls_lat=sorted(ls_lat)
+                        sort_ls_lng=sorted(ls_lng)
+                        id_lat1=int(thr/2)
+                        #id_lng1=int(thr/2)
+                        t_id_lat1=2*id_lat1
+                        if t_id_lat1==thr:#thr is even
+                            id_lat2=copy.copy(id_lat1)
+                            id_lat1=copy.copy(id_lat2)-1
+                        else:#thr is odd
+                            id_lat2=copy.copy(id_lat1)-1
+                            id_lat1=copy.copy(id_lat2)-1
+                        lat_axis=(sort_ls_lat[id_lat1]+sort_ls_lat[id_lat2])/2
+                        ind=0
+                        ls1=[]
+                        ls2=[]
+                        subls_lng1=[]
+                        subls_lng2=[]
+                        count1=0
+                        count2=0
+                        while ind<thr:
+                            if ls_sample[ind].p.lat<lat_axis:
+                                ls1.append(ls_sample[ind])
+                                subls_lng1.append(ls_sample[ind].p.lng)
+                                count1=copy.copy(count1)+1
+                            else:
+                                ls2.append(ls_sample[ind])
+                                subls_lng2.append(ls_sample[ind].p.lng)
+                                count2=copy.copy(count2)+1
+                            ind=ind+1
+                        sort_subls_lng1=sorted(subls_lng1)
+                        sort_subls_lng2=sorted(subls_lng2)
+                        if count1%2==0:#if count1 is even
+                            id_lng12=int(count1/2)
+                            id_lng11=copy.copy(id_lng12)-1
+                        else:
+                            id_lng12=int(count1/2)-1
+                            id_lng11=copy.copy(id_lng12)-1
+                        lng_axis1=(sort_subls_lng1[id_lng11]+sort_subls_lng1[id_lng12])/2
+                        if count2%2==0:#if count1 is even
+                            id_lng22=int(count2/2)
+                            id_lng21=copy.copy(id_lng22)-1
+                        else:
+                            id_lng22=int(count2/2)-1
+                            id_lng21=copy.copy(id_lng22)-1
+                        lng_axis2=(sort_subls_lng2[id_lng21]+sort_subls_lng2[id_lng22])/2
+                        t_width1=lng_axis1-init_rect.lng
+                        t_height1=lat_axis-init_rect.lat
+                        rect11=avatar.models.Rect(lng=init_rect.lng,lat=init_rect.lat,width=t_width1,height=t_height1)
+                        rect11.save()
+                        t_width2=init_rect.lng+init_rect.width-lng_axis1
+                        rect12=avatar.models.Rect(lng=lng_axis1,lat=init_rect.lat, width=t_width2,height=t_height1)
+                        rect12.save()
+                        t_width3=lng_axis2-init_rect.lng
+                        t_height2=init_rect.lat+init_rect.height-lat_axis
+                        rect21=avatar.models.Rect(lng=init_rect.lng,lat=lat_axis,width=t_width3,height=t_height2)
+                        rect21.save()
+                        t_width4=init_rect.lng+init_rect.width-lng_axis2
+                        rect22=avatar.models.Rect(lng=lng_axis2,lat=lat_axis,width=t_width4,height=t_height2)
+                        rect22.save()
+                        chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0)
+                        chil11.save()
+                        chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0)
+                        chil12.save()
+                        chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0)
+                        chil21.save()
+                        chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0)
+                        chil22.save()
+                        chil11.parent=root
+                        chil11.save()
+                        root.save()
+                        chil12.parent=root
+                        chil12.save()
+                        root.save()
+                        chil21.parent=root
+                        chil21.save()
+                        root.save()
+                        chil22.parent=root
+                        chil22.save()
+                        root.save()
+                        root.haschild=1
+                        root.save()
+                        return root
+
+
+
+
+                    k=k+1
+                j=j+1
+            i=i+1
+
+        return root
+    @staticmethod
     def create_tree(list_traj):
-        [minlng,maxlng,minlat,maxlat,mindate,maxdate]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory
+        #[lat,lng]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory
+        #return 1,lat,lng
+        [minlat,maxlat,minlng,maxlng,mindate,maxdate]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory
+
+        #return 1,minlng,maxlng-minlng,minlat,maxlat-minlat,mindate,maxdate
 #*******************************************#*******************************************
 #*******************************************#*******************************************
 #*******************************************#*******************************************
@@ -468,10 +642,10 @@ class RSpanningTree:
 #resolution should also be an input of this function
 
 #get the number of spatial grids
-        num_lat_grid=int(latrange/reso_lat)+1
-        num_lng_grid=int(lngrange/reso_lng)+1#number of grids after division
-        print num_lng_grid
-        print num_lat_grid
+        #num_lat_grid=int(latrange/reso_lat)+1
+        #num_lng_grid=int(lngrange/reso_lng)+1#number of grids after division
+        #print num_lng_grid
+        #print num_lat_grid
         print 'before',mindate,maxdate
         print 'after',mindate,maxdate
 
@@ -479,8 +653,10 @@ class RSpanningTree:
         j=0
         lng_start=int(minlng*lng_round)
         lat_start=int(minlat*lat_round)
-        lng_end=int(lng_start+lngrange*lng_round)
-        lat_end=int(lat_start+latrange*lat_round)
+        lng_end=int(maxlng*lng_round)+1
+        lat_end=int(maxlat*lat_round)+1
+        #lng_end=int(lng_start+lngrange*lng_round)+1
+        #lat_end=int(lat_start+latrange*lat_round)+1
         print lng_start,lat_start,"\n***************************"
         lng_grid=0
         lat_grid=0
@@ -498,15 +674,42 @@ class RSpanningTree:
         month=str(mindate[1])
         day=str(mindate[2])
         temp_mind=copy.copy(str(year))+'-'+copy.copy(str(month))+'-'+copy.copy(str(day))+' 00:00:00'
-        #root=avatar.models.Yohoho(id='0', s_time=copy.copy(temp_mind), e_time=copy.copy(temp_maxd), s_lat=str(lat_start), e_lat=str(lat_end),
-        #            s_lng=str(lng_start), e_lng=str(lng_end))
+        root=avatar.models.Yohoho(id='0', s_time=copy.copy(temp_mind), e_time=copy.copy(temp_maxd), s_lat=str(lat_start), e_lat=str(lat_end),
+                    s_lng=str(lng_start), e_lng=str(lng_end))
 #create nodes based on spatial grids
-        twidth=lng_end-lng_start
-        theight=lat_end-lat_start
-        rect=avatar.models.Rect(lat=lat_start,lng=lng_start,width=twidth,height=theight)
-        root=avatar.models.CloST(bounding_box=rect)
         root.save()
-        return root,minlng,maxlng,minlat,maxlat,mindate,maxdate
+        tt_lng_start=float(lng_start/lng_round)
+        tt_lat_start=float(lat_start/lat_round)
+        tw1=copy.copy(float(lng_end-lng_start)/float(lng_round))
+        tw2=copy.copy(minlng-tt_lng_start)
+        twidth=copy.copy(tw1)+copy.copy(tw2)
+        th1=copy.copy(float(lat_end-lat_start)/float(lat_round))
+        th2=copy.copy(minlat-tt_lat_start)
+        theight=copy.copy(th1)+copy.copy(th2)
+        #return 1,tw1,tw2,th1,th2
+        #return 1,twidth,theight,tt_lng_start,tt_lat_start,minlng,minlat
+        #lat_start=tt_lat_start
+        #lng_start=tt_lng_start
+        rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
+        rect.save()
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0)
+        root2.save()
+        #root2.haschild=0
+        root2.save()
+        num_lng_grid=int(twidth/temp_lng)+1
+        num_lat_grid=int(theight/temp_lat)+1
+        #return root2,root2.haschild,root2.bounding_box.lat,root2.bounding_box.lng, root2.bounding_box.height, root2.bounding_box.width,mindate,maxdate
+        #return root2, 'theight= '+str(theight), 'twidth= '+str(twidth), temp_lat,temp_lng,num_lat_grid,num_lng_grid#,mindate,maxdate
+        #start here
+        thr=100
+        occupancy=0
+        root3=RSpanningTree.addtoquadtree(root2, list_traj, thr, occupancy)
+        return root3, root3.get_children()[0].bounding_box.lat,root3.get_children()[1].bounding_box.lat,root3.get_children()[2].bounding_box.lat,root3.get_children()[3].bounding_box.lat
+        #return root2,root3
+
+        #********************************************************************************
+        #********************************************************************************
+        #********************************************************************************
         while i<num_lng_grid:
             j=0
             while j<num_lat_grid:
