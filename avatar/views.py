@@ -90,38 +90,15 @@ class RSpanningTreeViewSet(viewsets.ModelViewSet):
 
 #************************************************
 def create_index(request):
-    #if 'id' in request.GET:
-    #return resp(500, "parameter not correct")
-    #return resp(500, "parameter not correct")
-    #return idset
     traj_set= Trajectory.objects.all()
     #return resp(500, traj_set[0])
     set_sample=traj_set[0].trace.p.all()
-    #raw1=str(set_sample[0].t).split('+')
-    #raw_time = RSpanningTree.time_split(raw1[0])
-    #raw_time[1]= [0,0,0]
-    #return resp(200, raw_time)
-    #return resp(200, len(set_sample))
-    #return resp(200, len(traj_set))
-    #traj_set2=[]
-    #traj_set2.append(traj_set[3])
-    #return resp(200, len(traj_set2))
-    #t_raw1=str(temp_node.s_time).split('+')
-    #t_raw2=copy.copy(t_raw1[0])
-    #raw_time = RSpanningTree.time_split(t_raw2)
-
     if len(traj_set)==0:
         return resp(500, "parameter not correct")
     else:
-        #ls_traj=[]
-        #i=0
-        #for traj in traj_set:
-            #traj = Trajectory.objects.get(taxi=id)
-            #ls_traj.append(traj)
-        #return resp(500, TrajectorySerializer(traj_set[1]).data)
-        #return resp(200, len(traj_set))
         root=RSpanningTree.create_tree(traj_set)
         r=root[1:]
+        #return resp(200, RSpanningTreeSerializer(root[0]).data)
         return resp(200, r)
         point_set=root.pointer.all()
         p=point_set

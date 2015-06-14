@@ -87,11 +87,36 @@ class RecursiveField(serializers.Serializer):
         return serializer.data
 
 
-class RSpanningTreeSerializer(serializers.ModelSerializer):
-    pointer = RecursiveField(many=True)
+
+
+
+
+
+class RectSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Yohoho
-        fields = ('pointer', 'id', 's_time', 'e_time', 's_lat', 'e_lat', 's_lng', 'e_lng', 'ls_traj')
+        model=Rect
+        fields=('lat','lng','height','width')
+class RSpanningTreeSerializer(serializers.ModelSerializer):
+    bounding_box=RectSerializer()
+    parent=RecursiveField(many=True)
+    #children=RecursiveField(many=True)
+    ls_traj=TrajectorySerializer(many=True)
+    ls_sample=SampleSerializer(many=True)
+    class Meta:
+        model = CloST
+        fields=('bounding_box','haschild','occupancy','ls_traj','ls_sample','parent')
+
+
+
+
+
+
+
+#class RSpanningTreeSerializer(serializers.ModelSerializer):
+#    pointer = RecursiveField(many=True)
+#    class Meta:
+#        model = Yohoho
+#        fields = ('pointer', 'id', 's_time', 'e_time', 's_lat', 'e_lat', 's_lng', 'e_lng', 'ls_traj')
 #***************************************************************
 #=======
 #>>>>>>> origin/master

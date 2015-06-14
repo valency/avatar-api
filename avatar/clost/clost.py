@@ -379,12 +379,17 @@ class RSpanningTree:
         while i<num_traj:
         #while list_traj[i] is not None:
             s = list_traj[i]
+            s.save()
             j = 0
             #num_trace = s.trace.count()  # number of traces in this trajectory
             num_trace = 1
             temp=[s.id, s.taxi]
+            temp=s
+            temp.save()
             ttemp=copy.copy(temp)
+            ttemp.save()
             root.ls_traj.append(ttemp)#save this traj to the tree5
+            #root.ls_traj.add(ttemp)
             root.save()
             while j < num_trace:
                 #s_trace = s.trace[j]
@@ -444,12 +449,14 @@ class RSpanningTree:
 #*******************************************#*******************************************
 #*******************************************#*******************************************
     @staticmethod
-    def inserttotree(root, traj_id, taxi, sample, thr):
+    def inserttotree(root, traj, sample, thr):
         if root.occupancy<thr:
         #if root.haschild==0:
-            root.ls_traj.append([traj_id,taxi])
+            #root.ls_traj.append([traj_id,taxi])
+            root.ls_traj.add(traj)
             root.save()
-            root.ls_sample.append(sample)
+            #root.ls_sample.append(sample)
+            root.ls_sample.add(sample)
             root.save()
             root.occupancy=copy.copy(root.occupancy)+1
             root.save()
@@ -458,12 +465,12 @@ class RSpanningTree:
             init_rect=root.bounding_box
             ls_lat=[]#save the lattitude of every sample saved in this node
             ls_lng=[]
-            ls_sample=copy.copy(root.ls_sample)
+            ls_sample=copy.copy(root.ls_sample.all())
             length=len(ls_sample)
             i=0
             while i<length:
-                ls_lng.append(root.ls_sample[i].p.lng)
-                ls_lat.append(root.ls_sample[i].p.lat)
+                ls_lng.append(ls_sample[i].p.lng)
+                ls_lat.append(ls_sample[i].p.lat)
                 i=i+1
         #else:#if this node has been full
             sort_ls_lat=sorted(ls_lat)
@@ -550,13 +557,13 @@ class RSpanningTree:
             t_width4=init_rect.lng+init_rect.width-lng_axis2
             rect22=avatar.models.Rect(lng=lng_axis2,lat=lat_axis,width=t_width4,height=t_height2)
             rect22.save()
-            chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0,occupancy=0)
+            chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0,occupancy=0,context='')
             chil11.save()
-            chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0,occupancy=0)
+            chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0,occupancy=0,context='')
             chil12.save()
-            chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0,occupancy=0)
+            chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0,occupancy=0,context='')
             chil21.save()
-            chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0,occupancy=0)
+            chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0,occupancy=0,context='')
             chil22.save()
             chil11.parent=root
             chil11.save()
@@ -576,34 +583,34 @@ class RSpanningTree:
             while ind2<thr:
                 if ls_sample[ind2].p.lng<chil12.bounding_box.lng:
                     if ls_sample[ind2].p.lat<chil22.bounding_box.lat:
-                        RSpanningTree.inserttotree(chil11,traj_id,taxi,ls_sample[ind2],thr)
+                        RSpanningTree.inserttotree(chil11,traj,ls_sample[ind2],thr)
                     else:
-                        RSpanningTree.inserttotree(chil21,traj_id,taxi,ls_sample[ind2],thr)
+                        RSpanningTree.inserttotree(chil21,traj,ls_sample[ind2],thr)
                 elif ls_sample[ind2].p.lat<chil21.bounding_box.lat:
-                    RSpanningTree.inserttotree(chil12,traj_id,taxi,ls_sample[ind2],thr)
+                    RSpanningTree.inserttotree(chil12,traj,ls_sample[ind2],thr)
                 else:
-                    RSpanningTree.inserttotree(chil22,traj_id,taxi,ls_sample[ind2],thr)
+                    RSpanningTree.inserttotree(chil22,traj,ls_sample[ind2],thr)
                 ind2=ind2+1
             if sample.p.lng<root.get_children()[1].bounding_box.lng:
                 if sample.p.lat<root.get_children()[2].bounding_box.lat:
-                    RSpanningTree.inserttotree(root.get_children()[0], traj_id,taxi,sample,thr)
+                    RSpanningTree.inserttotree(root.get_children()[0], traj,sample,thr)
                 else:
-                    RSpanningTree.inserttotree(root.get_children()[2], traj_id,taxi,sample,thr)
+                    RSpanningTree.inserttotree(root.get_children()[2], traj,sample,thr)
             elif sample.p.lat<root.get_children()[2].bounding_box.lat:
-                RSpanningTree.inserttotree(root.get_children()[1],traj_id,taxi,sample,thr)
+                RSpanningTree.inserttotree(root.get_children()[1],traj,sample,thr)
             else:
-                RSpanningTree.inserttotree(root.get_children()[3],traj_id,taxi,sample,thr)
+                RSpanningTree.inserttotree(root.get_children()[3],traj,sample,thr)
             return
         else:
             if sample.p.lng<root.get_children()[1].bounding_box.lng:
                 if sample.p.lat<root.get_children()[2].bounding_box.lat:
-                    RSpanningTree.inserttotree(root.get_children()[0], traj_id,taxi,sample,thr)
+                    RSpanningTree.inserttotree(root.get_children()[0], traj,sample,thr)
                 else:
-                    RSpanningTree.inserttotree(root.get_children()[2], traj_id,taxi,sample,thr)
+                    RSpanningTree.inserttotree(root.get_children()[2], traj,sample,thr)
             elif sample.p.lat<root.get_children()[2].bounding_box.lat:
-                RSpanningTree.inserttotree(root.get_children()[1],traj_id,taxi,sample,thr)
+                RSpanningTree.inserttotree(root.get_children()[1],traj,sample,thr)
             else:
-                RSpanningTree.inserttotree(root.get_children()[3],traj_id,taxi,sample,thr)
+                RSpanningTree.inserttotree(root.get_children()[3],traj,sample,thr)
 
 
         return
@@ -652,10 +659,12 @@ class RSpanningTree:
         i=0
         while i<num_traj:
             s = list_traj[i]
+            s.save()
             j = 0
             num_trace = 1
             while j < num_trace:
                 s_trace = s.trace
+                s_trace.save()
                 set_sample = s_trace.p.all()
                 num_sample = len(set_sample)
                 #return init_rect.lat,init_rect.lng,init_rect.height,init_rect.width
@@ -674,14 +683,15 @@ class RSpanningTree:
                         return k,'4 stuck'
                         continue
                     if occupancy<thr:#if this node hasn't been full
-                        root.ls_sample.append(set_sample[k])
+                        root.ls_sample.add(set_sample[k])
                         root.save()
-                        ls_sample=copy.copy(root.ls_sample)
+                        ls_sample=copy.copy(root.ls_sample.all())
                         #return len(ls_sample)
                         occupancy=occupancy+1
                         root.occupancy=copy.copy(occupancy)
                         root.save()
-                        root.ls_traj.append([s.id,s.taxi])
+                        #root.ls_traj.append([s.id,s.taxi])
+                        root.ls_traj.add(s)
                         root.save()
                         ls_lat.append(set_sample[k].p.lat)
                         ls_lng.append(set_sample[k].p.lng)
@@ -766,13 +776,13 @@ class RSpanningTree:
                         t_width4=init_rect.lng+init_rect.width-lng_axis2
                         rect22=avatar.models.Rect(lng=lng_axis2,lat=lat_axis,width=t_width4,height=t_height2)
                         rect22.save()
-                        chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0,occupancy=0)
+                        chil11=avatar.models.CloST.objects.create(bounding_box=rect11,haschild=0,occupancy=0,context='')
                         chil11.save()
-                        chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0,occupancy=0)
+                        chil12=avatar.models.CloST.objects.create(bounding_box=rect12,haschild=0,occupancy=0,context='')
                         chil12.save()
-                        chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0,occupancy=0)
+                        chil21=avatar.models.CloST.objects.create(bounding_box=rect21,haschild=0,occupancy=0,context='')
                         chil21.save()
-                        chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0,occupancy=0)
+                        chil22=avatar.models.CloST.objects.create(bounding_box=rect22,haschild=0,occupancy=0,context='')
                         chil22.save()
                         chil11.parent=root
                         chil11.save()
@@ -791,24 +801,24 @@ class RSpanningTree:
                         #RSpanningTree.inserttotree(chil11,s.id,s.taxi,set_sample[k],thr)
                         if set_sample[k].p.lng<root.get_children()[1].bounding_box.lng:
                             if set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
-                                RSpanningTree.inserttotree(root.get_children()[0], s.id,s.taxi,set_sample[k],thr)
+                                RSpanningTree.inserttotree(root.get_children()[0], s,set_sample[k],thr)
                             else:
-                                RSpanningTree.inserttotree(root.get_children()[2], s.id,s.taxi,set_sample[k],thr)
+                                RSpanningTree.inserttotree(root.get_children()[2], s,set_sample[k],thr)
                         elif set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
-                            RSpanningTree.inserttotree(root.get_children()[1],s.id,s.taxi,set_sample[k],thr)
+                            RSpanningTree.inserttotree(root.get_children()[1],s,set_sample[k],thr)
                         else:
-                            RSpanningTree.inserttotree(root.get_children()[3],s.id,s.taxi,set_sample[k],thr)
+                            RSpanningTree.inserttotree(root.get_children()[3],s,set_sample[k],thr)
                         #return #root
                     else:
                         if set_sample[k].p.lng<root.get_children()[1].bounding_box.lng:
                             if set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
-                                RSpanningTree.inserttotree(root.get_children()[0], s.id,s.taxi,set_sample[k],thr)
+                                RSpanningTree.inserttotree(root.get_children()[0], s,set_sample[k],thr)
                             else:
-                                RSpanningTree.inserttotree(root.get_children()[2], s.id,s.taxi,set_sample[k],thr)
+                                RSpanningTree.inserttotree(root.get_children()[2], s,set_sample[k],thr)
                         elif set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
-                            RSpanningTree.inserttotree(root.get_children()[1],s.id,s.taxi,set_sample[k],thr)
+                            RSpanningTree.inserttotree(root.get_children()[1],s,set_sample[k],thr)
                         else:
-                            RSpanningTree.inserttotree(root.get_children()[3],s.id,s.taxi,set_sample[k],thr)
+                            RSpanningTree.inserttotree(root.get_children()[3],s,set_sample[k],thr)
                         #return #root
 
 
@@ -819,6 +829,48 @@ class RSpanningTree:
             i=i+1
 
         return #root
+    @staticmethod
+    def traverse(rootorigin,root,l_tree):
+        str_box='bounding_box:{\nlat:'+str(root.bounding_box.lat)+',\nlng:'+str(root.bounding_box.lng)+\
+             ',\nheight:'+str(root.bounding_box.height)+',\nwidth:'+\
+             str(root.bounding_box.width)+'},\n'
+        str_haschild='haschild:'+str(root.haschild)+',\n'
+        str_occupancy='occupancy:'+str(root.occupancy)+',\n'
+        rootorigin.context=rootorigin.context+str_box+str_haschild+str_occupancy
+        #l_tree=l_tree+str_box+str_haschild+str_occupancy
+        if root.haschild==1:
+            rootorigin.context=rootorigin.context+'children:{[\n'
+            RSpanningTree.traverse(rootorigin,root.get_children()[0],l_tree)
+            rootorigin.context=rootorigin.context+'\n]\n'
+            RSpanningTree.traverse(rootorigin,root.get_children()[1],l_tree)
+            rootorigin.context=rootorigin.context+'\n]\n'
+            RSpanningTree.traverse(rootorigin,root.get_children()[2],l_tree)
+            rootorigin.context=rootorigin.context+'\n]\n'
+            RSpanningTree.traverse(rootorigin,root.get_children()[3],l_tree)
+            rootorigin.context=rootorigin.context+'\n]}\n'
+        else:
+            ls_traj=root.ls_traj.all()
+            num_ls_traj=len(ls_traj)
+            i=0
+            str_traj='ls_traj: '
+            while i<num_ls_traj:
+                str_traj=str_traj+'['+str(ls_traj[i].id)+str(ls_traj[i].taxi)+']\n'
+                i=i+1
+            #str_traj=str_traj+'\n'
+            rootorigin.context=rootorigin.context+str_traj
+            str_sample='ls_sample:'
+            ls_sample=root.ls_sample.all()
+            num_ls_sample=len(ls_sample)
+            j=0
+            while j<num_ls_sample:
+                str_sample=str_sample+'['+str(ls_sample[j].id)+str(ls_sample[j].p.lat)+str(ls_sample[j].p.lng)+']\n'
+                j=j+1
+            rootorigin.context=rootorigin.context+str_sample
+
+
+
+
+        return
     @staticmethod
     def create_tree(list_traj):
         #[lat,lng]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory
@@ -904,7 +956,7 @@ class RSpanningTree:
         #lng_start=tt_lng_start
         rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
         rect.save()
-        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0)
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='')
         root2.save()
         #root2.haschild=0
         root2.save()
@@ -917,35 +969,47 @@ class RSpanningTree:
         occupancy=0
         #root3=RSpanningTree.addtoquadtree(root2, list_traj, thr)
         RSpanningTree.addtoquadtree(root2, list_traj, thr)
-        return root2, root2.get_children()[0].get_children()[2].bounding_box.lat, root2.get_children()[0].bounding_box.lat,root2.get_children()[1].bounding_box.lat,root2.get_children()[2].bounding_box.lat,root2.get_children()[3].bounding_box.lat
+        #return root2, root2.get_children()[0].get_children()[2].bounding_box.lat, root2.get_children()[0].bounding_box.lat,root2.get_children()[1].bounding_box.lat,root2.get_children()[2].bounding_box.lat,root2.get_children()[3].bounding_box.lat
+        test_sample=root2.ls_sample.all()
+        child=root2.get_children()[0]
+        child.save()
+        l_occ=[]
+        l_occ.append(child.occupancy)
+        while child.haschild==1:
+            child=child.get_children()[0]
+            l_occ.append(child.occupancy)
+        l_tree=''
+        info=RSpanningTree.traverse(root2,root2,l_tree)
+        return root2,root2.context
+        #return root2, root2.get_children()[0].get_children()[2].bounding_box.lat,root2.get_children()[0].get_children()[1].get_children()[2].bounding_box.lat,test_sample[0].p.lat,l_occ
         #return root2,root3
 
         #********************************************************************************
         #********************************************************************************
         #********************************************************************************
-        while i<num_lng_grid:
-            j=0
-            while j<num_lat_grid:
-                lng_grid=int(lng_start+j*reso_lng*lng_round)
-                lat_grid=int(lat_start+i*reso_lat*lat_round)
-                tj=j+1
-                elng_grid=int(lng_start+tj*reso_lng*lng_round)
-                #return root, num_lat_grid, num_lng_grid
-                node=avatar.models.Yohoho(id=str(count), s_time=copy.copy(temp_mind), e_time=copy.copy(temp_maxd),
-                            s_lat=str(lat_grid), s_lng=str(lng_grid), e_lat=str(lat_grid), e_lng=str(elng_grid))
-                node.save()
-                #return node, mindate, reso_time, maxdate
-                #RSpanningTree.createfile_daytime(node,mindate,reso_time,maxdate)#in each spatial grid, create node based on time slots
-                t=RSpanningTree.createfile_daytime(node,mindate,reso_time,maxdate)
-                return node,t
-        #restart from here
-                node.save()
-                root.pointer.add(node)
-                root.save()
-                count=count+1
-                j=j+1
-            i=i+1
-        return root
+        # while i<num_lng_grid:
+        #     j=0
+        #     while j<num_lat_grid:
+        #         lng_grid=int(lng_start+j*reso_lng*lng_round)
+        #         lat_grid=int(lat_start+i*reso_lat*lat_round)
+        #         tj=j+1
+        #         elng_grid=int(lng_start+tj*reso_lng*lng_round)
+        #         #return root, num_lat_grid, num_lng_grid
+        #         node=avatar.models.Yohoho(id=str(count), s_time=copy.copy(temp_mind), e_time=copy.copy(temp_maxd),
+        #                     s_lat=str(lat_grid), s_lng=str(lng_grid), e_lat=str(lat_grid), e_lng=str(elng_grid))
+        #         node.save()
+        #         #return node, mindate, reso_time, maxdate
+        #         #RSpanningTree.createfile_daytime(node,mindate,reso_time,maxdate)#in each spatial grid, create node based on time slots
+        #         t=RSpanningTree.createfile_daytime(node,mindate,reso_time,maxdate)
+        #         return node,t
+        # #restart from here
+        #         node.save()
+        #         root.pointer.add(node)
+        #         root.save()
+        #         count=count+1
+        #         j=j+1
+        #     i=i+1
+        # return root
 
 
 
@@ -956,8 +1020,8 @@ class RSpanningTree:
 #*******************************************#*******************************************
 #*******************************************#*******************************************
 #*******************************************#*******************************************
-        RSpanningTree.addtofolder(root,list_traj,lng_start,lng_round,lat_start,lat_round,reso_lng,reso_lat,reso_time,num_lat_grid)
-        return root
+        # RSpanningTree.addtofolder(root,list_traj,lng_start,lng_round,lat_start,lat_round,reso_lng,reso_lat,reso_time,num_lat_grid)
+        # return root
 #*******************************************#*******************************************
 #*******************************************#*******************************************
 #*******************************************#*******************************************
