@@ -145,14 +145,24 @@ class Rect(models.Model):
             return False
 
 
+class TimeSlot(models.Model):
+    bounding_box=models.ForeignKey(Rect)
+    starttime=models.DateTimeField()
+    timeslot=models.IntegerField(null=True)
+    ls_traj=models.ManyToManyField(Trajectory)
+    ls_sample=models.ManyToManyField(Sample)
+    def __str__(self):
+        return self.bounding_box.lat
 class CloST(MPTTModel):
     bounding_box = models.ForeignKey(Rect)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
     haschild=models.IntegerField(null=True)
     occupancy=models.IntegerField(null=True)
-    ls_traj=models.ManyToManyField(Trajectory,null=True)
-    ls_sample=models.ManyToManyField(Sample,null=True)
-    context=models.CharField(max_length=65535, null=True)
+    ls_traj=models.ManyToManyField(Trajectory)
+    ls_sample=models.ManyToManyField(Sample)
+    context=models.CharField(max_length=131071, null=True)
+    starttime=models.DateTimeField(null=True)
+    timenode=models.ManyToManyField(TimeSlot)
     #ls_traj=[]
     #ls_sample=[]
 

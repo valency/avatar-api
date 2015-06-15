@@ -830,27 +830,58 @@ class RSpanningTree:
 
         return #root
     @staticmethod
-    def traverse(rootorigin,root,l_tree):
+    def createtimeindex(rootorigin,root,timereso):
         str_box='bounding_box:{\nlat:'+str(root.bounding_box.lat)+',\nlng:'+str(root.bounding_box.lng)+\
              ',\nheight:'+str(root.bounding_box.height)+',\nwidth:'+\
              str(root.bounding_box.width)+'},\n'
         str_haschild='haschild:'+str(root.haschild)+',\n'
         str_occupancy='occupancy:'+str(root.occupancy)+',\n'
         rootorigin.context=rootorigin.context+str_box+str_haschild+str_occupancy
-        #l_tree=l_tree+str_box+str_haschild+str_occupancy
         if root.haschild==1:
             rootorigin.context=rootorigin.context+'children:{[\n'
-            RSpanningTree.traverse(rootorigin,root.get_children()[0],l_tree)
+            RSpanningTree.createtimeindex(rootorigin,root.get_children()[0],timereso)
             rootorigin.context=rootorigin.context+'\n]\n'
-            RSpanningTree.traverse(rootorigin,root.get_children()[1],l_tree)
+            RSpanningTree.createtimeindex(rootorigin,root.get_children()[1],timereso)
             rootorigin.context=rootorigin.context+'\n]\n'
-            RSpanningTree.traverse(rootorigin,root.get_children()[2],l_tree)
+            RSpanningTree.createtimeindex(rootorigin,root.get_children()[2],timereso)
             rootorigin.context=rootorigin.context+'\n]\n'
-            RSpanningTree.traverse(rootorigin,root.get_children()[3],l_tree)
+            RSpanningTree.createtimeindex(rootorigin,root.get_children()[3],timereso)
             rootorigin.context=rootorigin.context+'\n]}\n'
         else:
             ls_traj=root.ls_traj.all()
             num_ls_traj=len(ls_traj)
+            num_timeslot=int(86400/timereso)+1
+            start_time=[0,0,0]
+            end_time=[23,59,59]
+            t_raw1=str(rootorigin.starttime).split('+')
+            t_raw2=copy.copy(t_raw1[0])
+            raw_time = RSpanningTree.time_split(t_raw2)
+            raw_time[1][0]=0
+            raw_time[1][1]=0
+            raw_time[1][2]=0
+            #rawtime=rootorigin.
+            #stime=
+            k=0
+            year=copy.copy(raw_time[0][0])
+            month=copy.copy(raw_time[0][1])
+            day=copy.copy(raw_time[0][2])
+            while k<num_timeslot:
+                hour=copy.copy(start_time[0])
+                minute=copy.copy(start_time[1])
+                sec=copy.copy(start_time[2])
+                temp_s_time=str(copy.copy(year))+'-'+str(copy.copy(month))+'-'+str(copy.copy(day))+' '\
+                            +str(hour)+':'+str(minute)+':'+str(sec)
+
+                t_node=avatar.models.TimeSlot(bounding_box=root.bounding_box,starttime=temp_s_time,timeslot=timereso)
+                t_node.save()
+                root.timenode.add(t_node)
+                root.save()
+                rootorigin.save()
+
+                k=k+1
+                t_s=RSpanningTree.time_to_sec(start_time)
+                t_s=copy.copy(t_s)+timereso
+                start_time=RSpanningTree.sec_to_time(t_s)
             i=0
             str_traj='ls_traj: '
             while i<num_ls_traj:
@@ -858,14 +889,45 @@ class RSpanningTree:
                 i=i+1
             #str_traj=str_traj+'\n'
             rootorigin.context=rootorigin.context+str_traj
+            rootorigin.save()
             str_sample='ls_sample:'
             ls_sample=root.ls_sample.all()
             num_ls_sample=len(ls_sample)
             j=0
+            alreadyin=0
             while j<num_ls_sample:
                 str_sample=str_sample+'['+str(ls_sample[j].id)+str(ls_sample[j].p.lat)+str(ls_sample[j].p.lng)+']\n'
+                tt_raw1=str(ls_sample[j].t).split('+')
+                tt_raw2=copy.copy(tt_raw1[0])
+                raw_time = RSpanningTree.time_split(tt_raw2)
+                timevalue=RSpanningTree.time_to_sec(raw_time[1])
+                timeid=int(timevalue/timereso)
+                root.timenode.all()[timeid].ls_sample.add(ls_sample[j])
+                root.save()
+                rootorigin.save()
+                if alreadyin==0:
+                    root.timenode.all()[timeid].ls_traj.add(ls_traj[0])#in fact, ls_traj might contain several trajs, but here we only
+                    root.save()
+                    rootorigin.save()
+                    alreadyin=1
+                #consider 1 traj in each ls_traj
                 j=j+1
-            rootorigin.context=rootorigin.context+str_sample
+            k=0
+            str_timenode='tnode:'
+            while k<num_timeslot:
+                num_sample=len(root.timenode.all()[k].ls_sample.all())
+                str_timenode=str_timenode+'slot '+str(k)+str(num_sample)+': {\n '
+                j=0
+                while j<num_sample:
+                    str_timenode=str_timenode+'['+str(root.timenode.all()[k].ls_sample.all()[j].id)+\
+                                 str(root.timenode.all()[k].ls_sample.all()[j].t)+']'+'\n'
+                    j=j+1
+                str_timenode=str_timenode+'}\n'
+                k=k+1
+
+            #rootorigin.context=rootorigin.context+str_sample
+            rootorigin.context=rootorigin.context+str_timenode
+            rootorigin.save()
 
 
 
@@ -956,7 +1018,7 @@ class RSpanningTree:
         #lng_start=tt_lng_start
         rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
         rect.save()
-        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='')
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind)
         root2.save()
         #root2.haschild=0
         root2.save()
@@ -978,8 +1040,8 @@ class RSpanningTree:
         while child.haschild==1:
             child=child.get_children()[0]
             l_occ.append(child.occupancy)
-        l_tree=''
-        info=RSpanningTree.traverse(root2,root2,l_tree)
+        info=RSpanningTree.createtimeindex(root2,root2,reso_time)
+
         return root2,root2.context
         #return root2, root2.get_children()[0].get_children()[2].bounding_box.lat,root2.get_children()[0].get_children()[1].get_children()[2].bounding_box.lat,test_sample[0].p.lat,l_occ
         #return root2,root3
