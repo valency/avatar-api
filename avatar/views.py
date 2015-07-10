@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from django.core.exceptions import ObjectDoesNotExist
 #<<<<<<< HEAD
 from avatar.clost.clost import RSpanningTree
+import copy
 
 from settings import Settings
 from serializers import *
@@ -122,3 +123,49 @@ def create_index(request):
 #************************************************
 #=======
 #>>>>>>> origin/master
+def query_traj(request):
+    ls=CloST.objects.all()
+    num=len(ls)# number of CloST nodes
+    height=0
+    width=0
+    index=0
+    i=0
+    higher=0
+    wider=0
+    while i<num:
+        t_node=ls[i]
+        t_height=copy.copy(t_node.bounding_box.height)
+        t_width=copy.copy(t_node.bounding_box.width)
+        if t_height>=height:
+            height=copy.copy(t_height)
+            higher=1
+        if t_width>=width:
+            width=copy.copy(t_width)
+            wider=1
+        if higher==1:
+            if wider==1:
+                index=copy.copy(i)
+        i=copy.copy(i)+1
+        higher=0
+        wider=0
+
+    root=ls[index]#root of the tree created in the function create_index, in fact, it should be the first node
+    #in the node list
+    print 'we are before request.POST'
+    if 'lng' in request.POST and 'lat' in request.POST and 'height' in request.POST and 'width' in request.POST \
+            and 'starttime' in request.POST and 'endtime' in request.POST:
+        print 'we are after request.POST'
+        lng=float(request.POST['lng'])
+        lat=float(request.POST['lat'])
+        height=float(request.POST['height'])
+        width=float(request.POST['width'])
+        maxlng=lng+width
+        maxlat=lat+height
+        starttime=request.POST['starttime'].split(':')
+        endtime=request.POST['endtime'].split(':')
+        traj_found=RSpanningTree.query_traj(root,lng,lat,maxlng,maxlat,starttime,endtime)
+        return resp(200, traj_found)
+    else:
+        return resp(500, "parameter not correct")
+    #return resp(500, [index,root.occupancy, root.bounding_box.lat,root.bounding_box.lng,root.bounding_box.height,root.bounding_box.width])
+    #return

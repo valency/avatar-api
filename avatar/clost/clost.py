@@ -1073,6 +1073,35 @@ class RSpanningTree:
         #     i=i+1
         # return root
 
+    @staticmethod
+    def query_traj(root,tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,tgt_stime,tgt_etime):
+        min_lng=copy.copy(root.bounding_box.lng)
+        min_lat=copy.copy(root.bounding_box.lat)
+        width=copy.copy(root.bounding_box.width)
+        height=copy.copy(root.bounding_box.height)
+        max_lng=min_lng+width
+        max_lat=min_lat+height
+        stime=[0,0,0]
+        etime=[23,59,59]
+        ls_trajid=[]
+        print 'min_lng is ',min_lng
+        print 'max_lng is ',max_lng
+        print 'min_lat is ',min_lat
+        print 'max_lat is ',max_lat
+        print 'tgt_minlng is ', tgt_minlng
+        print 'tgt_maxlng is ', tgt_maxlng
+        print 'tgt_minlat is ', tgt_minlat
+        print 'tgt_maxlat is ', tgt_maxlat
+        if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
+            ls_traj=root.ls_traj.all()
+            num_traj=len(ls_traj)
+            i=0
+            while i<num_traj:
+                t_traj=copy.copy(ls_traj[i])
+                ls_trajid.append(t_traj.id)
+                i=i+1
+        print 'ls_trajid', ls_trajid
+        return ls_trajid
 
 
 #*******************************************#*******************************************

@@ -160,6 +160,7 @@ class CloST(MPTTModel):
     occupancy=models.IntegerField(null=True)
     ls_traj=models.ManyToManyField(Trajectory)
     ls_sample=models.ManyToManyField(Sample)
+    ls_trajid=models.CharField(max_length=131071,null=True)
     context=models.CharField(max_length=131071, null=True)
     starttime=models.DateTimeField(null=True)
     timenode=models.ManyToManyField(TimeSlot)
