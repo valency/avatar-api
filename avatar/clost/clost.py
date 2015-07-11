@@ -1004,7 +1004,9 @@ class RSpanningTree:
         max_lat=min_lat+height
         if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
             if root.haschild==0:
-                ls_leafnode.append(root)
+                ls_leafnode.append([root,1])
+                print '**************************************\n'
+                print max_lat,max_lng,1
             else:
                 RSpanningTree.pickchildren(root.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
                 RSpanningTree.pickchildren(root.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
@@ -1027,7 +1029,9 @@ class RSpanningTree:
                 RSpanningTree.pickchildren(root.get_children()[3],new_tgt_minlng,new_tgt_minlat,
                                            new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
             else:
-                ls_leafnode.append(root)
+                ls_leafnode.append([root,0])
+                print '**************************************\n'
+                print new_tgt_minlng,new_tgt_minlat,new_tgt_maxlng,new_tgt_maxlat,0
         return
     @staticmethod
     def create_tree(list_traj):
@@ -1190,6 +1194,7 @@ class RSpanningTree:
         print 'tgt_maxlng is ', tgt_maxlng
         print 'tgt_minlat is ', tgt_minlat
         print 'tgt_maxlat is ', tgt_maxlat
+        print int(tgt_stime[0]),tgt_etime
         # if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
         #     ls_traj=root.ls_traj.all()
         #     num_traj=len(ls_traj)
@@ -1201,9 +1206,14 @@ class RSpanningTree:
         #         print 'lst_pt[0].id = ',lst_pt[0].id
         #         ls_trajid.append(t_traj.id)
         #         i=i+1
+        int_tgt_stime=RSpanningTree.time_to_sec([int(tgt_stime[0]),int(tgt_stime[1]),int(tgt_stime[2])])
+        int_tgt_etime=RSpanningTree.time_to_sec([int(tgt_etime[0]),int(tgt_etime[1]),int(tgt_etime[2])])
+        print int_tgt_etime,int_tgt_stime
         if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
             if root.haschild==0:
-                ls_leafnode.append(root)
+                ls_leafnode.append([root,1])
+                print '**************************************\n'
+                print max_lat,max_lng,1
             else:
                 RSpanningTree.pickchildren(root.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
                 RSpanningTree.pickchildren(root.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
@@ -1227,10 +1237,66 @@ class RSpanningTree:
                 RSpanningTree.pickchildren(root.get_children()[3],new_tgt_minlng,new_tgt_minlat,
                                            new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
             else:
-                ls_leafnode.append(root)
+                ls_leafnode.append([root,0])
+                print '**************************************\n'
+                print new_tgt_minlng,new_tgt_minlat,new_tgt_maxlng,new_tgt_maxlat,0
 
         print 'ls_trajid', ls_trajid
         print 'number of nodes', len(ls_leafnode)
+        print len(ls_leafnode[0])
+        i=0
+        num_leafnode=len(ls_leafnode)
+        while i<num_leafnode:
+            t_node=ls_leafnode[i][0]
+            print t_node.haschild
+            ls_sample=copy.copy(t_node.ls_sample.all())
+            num_sample=len(ls_sample)
+            j=0
+            while j<num_sample:
+                if ls_sample[j].p.lng>=min_lng and ls_sample[j].p.lng<=max_lng and ls_sample[j].p.lat>=min_lat and \
+                                    ls_sample[j].p.lat<=max_lat:
+                    sampletime=copy.copy(str(ls_sample[j].t)).split('+')
+                    raw_time = RSpanningTree.time_split(sampletime[0])
+                        #print raw_time
+                    t_compare=RSpanningTree.time_to_sec(raw_time[1])
+                        #print t_compare
+                    if t_compare>=int_tgt_stime and t_compare<=int_tgt_etime:
+                        t_trace=ls_sample[j].trace.all()[0]
+                        t_traj=t_trace.trajectory.all()[0]
+                        print ls_sample[j].t,ls_sample[j].p.lat,ls_sample[j].p.lng
+                        if t_traj.id not in ls_trajid:
+                            ls_trajid.append(t_traj.id)
+                j=j+1
+            # if ls_leafnode[i][1]==1:
+            #     ls_traj=copy.copy(t_node.ls_traj.all())
+            #     num_traj=len(ls_traj)
+            #     j=0
+            #     while j<num_traj:
+            #         t_traj=copy.copy(ls_traj[j])
+            #         if t_traj.id not in ls_trajid:
+            #             ls_trajid.append(t_traj.id)
+            #         j=j+1
+            # else:
+            #     ls_sample=copy.copy(t_node.ls_sample.all())
+            #     num_sample=len(ls_sample)
+            #     j=0
+            #     while j<num_sample:
+            #         if ls_sample[j].p.lng>=min_lng and ls_sample[j].p.lng<=max_lng and ls_sample[j].p.lat>=min_lat and \
+            #                         ls_sample[j].p.lat<=max_lat:
+            #             sampletime=copy.copy(str(ls_sample[j].t)).split('+')
+            #             raw_time = RSpanningTree.time_split(sampletime[0])
+            #             #print raw_time
+            #             t_compare=RSpanningTree.time_to_sec(raw_time[1])
+            #             #print t_compare
+            #             if t_compare>=int_tgt_stime and t_compare<=int_tgt_etime:
+            #                 t_trace=ls_sample[j].trace.all()[0]
+            #                 t_traj=t_trace.trajectory.all()[0]
+            #                 print ls_sample[j].t,ls_sample[j].p.lat,ls_sample[j].p.lng
+            #                 if t_traj.id not in ls_trajid:
+            #                     ls_trajid.append(t_traj.id)
+            #         j=j+1
+
+            i=copy.copy(i)+1
         return ls_trajid, 'number of nodes', len(ls_leafnode)
 
 
