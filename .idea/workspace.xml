@@ -4,8 +4,6 @@
     <list default="true" id="74dd06af-788c-4cd9-a79c-b30852d83985" name="Default" comment="">
       <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/0002_auto_20150608_0933.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/clost/clost.py" afterPath="$PROJECT_DIR$/avatar/clost/clost.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/models.py" afterPath="$PROJECT_DIR$/avatar/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="avatar-api.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -53,8 +51,8 @@
       <file leaf-file-name="clost.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="10.868421">
-              <caret line="878" column="39" selection-start-line="878" selection-start-column="39" selection-end-line="878" selection-end-column="39" />
+            <state vertical-scroll-proportion="-2.6167762">
+              <caret line="892" column="39" selection-start-line="892" selection-start-column="39" selection-end-line="892" selection-end-column="39" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#1114#1352#0" expanded="false" />
@@ -67,8 +65,9 @@
                 <element signature="e#10558#11400#0" expanded="false" />
                 <element signature="e#11723#14669#0" expanded="false" />
                 <element signature="e#14842#18330#0" expanded="false" />
-                <element signature="e#40461#45097#0" expanded="false" />
-                <element signature="e#51934#53093#0" expanded="false" />
+                <element signature="e#18404#26767#0" expanded="false" />
+                <element signature="e#26839#40383#0" expanded="false" />
+                <element signature="e#45372#52032#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -858,8 +857,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="10.868421">
-          <caret line="878" column="39" selection-start-line="878" selection-start-column="39" selection-end-line="878" selection-end-column="39" />
+        <state vertical-scroll-proportion="-2.6167762">
+          <caret line="892" column="39" selection-start-line="892" selection-start-column="39" selection-end-line="892" selection-end-column="39" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#1114#1352#0" expanded="false" />
@@ -872,8 +871,9 @@
             <element signature="e#10558#11400#0" expanded="false" />
             <element signature="e#11723#14669#0" expanded="false" />
             <element signature="e#14842#18330#0" expanded="false" />
-            <element signature="e#40461#45097#0" expanded="false" />
-            <element signature="e#51934#53093#0" expanded="false" />
+            <element signature="e#18404#26767#0" expanded="false" />
+            <element signature="e#26839#40383#0" expanded="false" />
+            <element signature="e#45372#52032#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -963,11 +963,14 @@ class RSpanningTree:
                 root.timenode.all()[timeid].ls_sample.add(ls_sample[j])
                 root.save()
                 rootorigin.save()
-                if alreadyin==0:
-                    root.timenode.all()[timeid].ls_traj.add(ls_traj[0])#in fact, ls_traj might contain several trajs, but here we only
-                    root.save()
-                    rootorigin.save()
-                    alreadyin=1
+                #if alreadyin==0:
+                trace_of_sample=copy.copy(ls_sample[j].trace.all()[0])
+                traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                    #root.timenode.all()[timeid].ls_traj.add(ls_traj[0])#in fact, ls_traj might contain several trajs, but here we only
+                root.timenode.all()[timeid].ls_traj.add(traj_of_sample)
+                root.save()
+                rootorigin.save()
+                #    alreadyin=1
                 #consider 1 traj in each ls_traj
                 j=j+1
             k=0
