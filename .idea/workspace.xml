@@ -40,7 +40,7 @@
         <entry file="file://$PROJECT_DIR$/avatar/views.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="154" column="65" selection-start-line="154" selection-start-column="65" selection-end-line="154" selection-end-column="65" />
+              <caret line="165" column="44" selection-start-line="165" selection-start-column="44" selection-end-line="165" selection-end-column="44" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -51,8 +51,8 @@
       <file leaf-file-name="clost.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-2.6167762">
-              <caret line="892" column="39" selection-start-line="892" selection-start-column="39" selection-end-line="892" selection-end-column="39" />
+            <state vertical-scroll-proportion="0.48355263">
+              <caret line="1009" column="87" selection-start-line="1009" selection-start-column="87" selection-end-line="1009" selection-end-column="87" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#1114#1352#0" expanded="false" />
@@ -67,7 +67,8 @@
                 <element signature="e#14842#18330#0" expanded="false" />
                 <element signature="e#18404#26767#0" expanded="false" />
                 <element signature="e#26839#40383#0" expanded="false" />
-                <element signature="e#45372#52032#0" expanded="false" />
+                <element signature="e#40461#45313#0" expanded="false" />
+                <element signature="e#47644#54300#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -416,7 +417,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="12" />
+      <option name="time" value="13" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -848,7 +849,7 @@
     <entry file="file://$PROJECT_DIR$/avatar/views.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="154" column="65" selection-start-line="154" selection-start-column="65" selection-end-line="154" selection-end-column="65" />
+          <caret line="165" column="44" selection-start-line="165" selection-start-column="44" selection-end-line="165" selection-end-column="44" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -857,8 +858,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-2.6167762">
-          <caret line="892" column="39" selection-start-line="892" selection-start-column="39" selection-end-line="892" selection-end-column="39" />
+        <state vertical-scroll-proportion="0.48355263">
+          <caret line="1009" column="87" selection-start-line="1009" selection-start-column="87" selection-end-line="1009" selection-end-column="87" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#1114#1352#0" expanded="false" />
@@ -873,7 +874,8 @@
             <element signature="e#14842#18330#0" expanded="false" />
             <element signature="e#18404#26767#0" expanded="false" />
             <element signature="e#26839#40383#0" expanded="false" />
-            <element signature="e#45372#52032#0" expanded="false" />
+            <element signature="e#40461#45313#0" expanded="false" />
+            <element signature="e#47644#54300#0" expanded="false" />
           </folding>
         </state>
       </provider>

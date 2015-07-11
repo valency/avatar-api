@@ -995,6 +995,41 @@ class RSpanningTree:
 
         return
     @staticmethod
+    def pickchildren(root,tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode):
+        min_lng=copy.copy(root.bounding_box.lng)
+        min_lat=copy.copy(root.bounding_box.lat)
+        width=copy.copy(root.bounding_box.width)
+        height=copy.copy(root.bounding_box.height)
+        max_lng=min_lng+width
+        max_lat=min_lat+height
+        if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
+            if root.haschild==0:
+                ls_leafnode.append(root)
+            else:
+                RSpanningTree.pickchildren(root.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[2],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[3],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+        elif tgt_maxlng<=min_lng or tgt_minlng>=max_lng or tgt_maxlat<=min_lat or tgt_minlat>=max_lat:
+            return
+        else:
+            new_tgt_maxlat=copy.copy(min(tgt_maxlat,max_lat))
+            new_tgt_minlat=copy.copy(max(tgt_minlat,min_lat))
+            new_tgt_maxlng=copy.copy(min(tgt_maxlng,max_lng))
+            new_tgt_minlng=copy.copy(max(tgt_minlng,min_lng))
+            if root.haschild==1:
+                RSpanningTree.pickchildren(root.get_children()[0],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[1],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[2],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[3],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+            else:
+                ls_leafnode.append(root)
+        return
+    @staticmethod
     def create_tree(list_traj):
         #[lat,lng]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory
         #return 1,lat,lng
@@ -1024,7 +1059,7 @@ class RSpanningTree:
         while temp_lat<1:
             temp_lat=temp_lat*10
             lat_round=lat_round*10
-    
+
         reso_time=1635#in seconds
 #resolution should also be an input of this function
 
@@ -1146,6 +1181,7 @@ class RSpanningTree:
         stime=[0,0,0]
         etime=[23,59,59]
         ls_trajid=[]
+        ls_leafnode=[]
         print 'min_lng is ',min_lng
         print 'max_lng is ',max_lng
         print 'min_lat is ',min_lat
@@ -1154,19 +1190,48 @@ class RSpanningTree:
         print 'tgt_maxlng is ', tgt_maxlng
         print 'tgt_minlat is ', tgt_minlat
         print 'tgt_maxlat is ', tgt_maxlat
+        # if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
+        #     ls_traj=root.ls_traj.all()
+        #     num_traj=len(ls_traj)
+        #     i=0
+        #     while i<num_traj:
+        #         t_traj=copy.copy(ls_traj[i])
+        #         t_trace=t_traj.trace
+        #         lst_pt=t_trace.p.all()
+        #         print 'lst_pt[0].id = ',lst_pt[0].id
+        #         ls_trajid.append(t_traj.id)
+        #         i=i+1
         if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
-            ls_traj=root.ls_traj.all()
-            num_traj=len(ls_traj)
-            i=0
-            while i<num_traj:
-                t_traj=copy.copy(ls_traj[i])
-                t_trace=t_traj.trace
-                lst_pt=t_trace.p.all()
-                print 'lst_pt[0].id = ',lst_pt[0].id
-                ls_trajid.append(t_traj.id)
-                i=i+1
+            if root.haschild==0:
+                ls_leafnode.append(root)
+            else:
+                RSpanningTree.pickchildren(root.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[2],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[3],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+        elif tgt_maxlng<=min_lng or tgt_minlng>=max_lng or tgt_maxlat<=min_lat or tgt_minlat>=max_lat:
+            return
+        #elif tgt_maxlng<=max_lng:
+        else:
+            new_tgt_maxlat=copy.copy(min(tgt_maxlat,max_lat))
+            new_tgt_minlat=copy.copy(max(tgt_minlat,min_lat))
+            new_tgt_maxlng=copy.copy(min(tgt_maxlng,max_lng))
+            new_tgt_minlng=copy.copy(max(tgt_minlng,min_lng))
+            if root.haschild==1:
+                RSpanningTree.pickchildren(root.get_children()[0],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[1],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[2],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                RSpanningTree.pickchildren(root.get_children()[3],new_tgt_minlng,new_tgt_minlat,
+                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+            else:
+                ls_leafnode.append(root)
+
         print 'ls_trajid', ls_trajid
-        return ls_trajid
+        print 'number of nodes', len(ls_leafnode)
+        return ls_trajid, 'number of nodes', len(ls_leafnode)
 
 
 #*******************************************#*******************************************
