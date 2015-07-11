@@ -260,6 +260,7 @@ class RSpanningTree:
 #*******************************************#*******************************************
     @staticmethod
     def date_compare(date1,date2):
+        #this function suppose we know in advance that date1 is later than date2
         mon_day=[0,31,28,31,30,31,30,31,31,30,31,30,31]#mon_day[1]=31
         mon_day2=[0,31,29,31,30,31,30,31,31,30,31,30,31]
         year_day=[365,366]
@@ -299,6 +300,7 @@ class RSpanningTree:
 
     @staticmethod
     def find(list_traj):
+        #this function suppose all the dates belong to the same year
         minlat = 0
         minlng = 0
         maxlng = 0
@@ -1033,6 +1035,47 @@ class RSpanningTree:
                 print '**************************************\n'
                 print new_tgt_minlng,new_tgt_minlat,new_tgt_maxlng,new_tgt_maxlat,0
         return
+    @staticmethod
+    def create_clost(list_traj):
+        [minlat,maxlat,minlng,maxlng,mindate,maxdate]=RSpanningTree.find(list_traj)
+        maxyear=copy.copy(maxdate[0])
+        maxmonth=copy.copy(maxdate[1])
+        maxday=copy.copy(maxdate[2])
+        minyear=copy.copy(mindate[0])
+        minmonth=copy.copy(mindate[1])
+        minday=copy.copy(mindate[2])
+        num_traj=len(list_traj)
+        i=0
+        t_date=copy.copy(mindate)
+        dif_day=RSpanningTree.date_compare(maxdate,t_date)
+        ls_ls_traj=[]
+        ls_root=[]
+        while dif_day>=0:
+            ls_ls_traj.append([])
+            ls_root.append(0)
+            t_date=copy.copy(RSpanningTree.date_plus(t_date,1))
+            dif_day=RSpanningTree.date_compare(maxdate,t_date)
+
+        while i<num_traj:
+            t_traj=list_traj[i]
+            t_trace=t_traj.trace
+            t_sample=t_trace.p.all()[0]
+            t_time=str(t_sample.t).split('+')
+            raw_time = RSpanningTree.time_split(t_time[0])
+            dateid=RSpanningTree.date_compare(raw_time[0],mindate)
+            ls_ls_traj[dateid].append(t_traj)
+            i=i+1
+        i=0
+        t_date=copy.copy(mindate)
+        dif_day=RSpanningTree.date_compare(maxdate,t_date)
+        while dif_day>=0:
+            t_date=copy.copy(RSpanningTree.date_plus(t_date,1))
+            dif_day=RSpanningTree.date_compare(maxdate,t_date)
+            ls_root[i]=RSpanningTree.create_tree(ls_ls_traj[i])
+            i=i+1
+
+
+        return ls_root[0]
     @staticmethod
     def create_tree(list_traj):
         #[lat,lng]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory

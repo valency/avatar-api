@@ -97,7 +97,8 @@ def create_index(request):
     if len(traj_set)==0:
         return resp(500, "parameter not correct")
     else:
-        root=RSpanningTree.create_tree(traj_set)
+        #root=RSpanningTree.create_tree(traj_set)
+        root=RSpanningTree.create_clost(traj_set)
         r=root[1:]
         #return resp(200, RSpanningTreeSerializer(root[0]).data)
         return resp(200, r)

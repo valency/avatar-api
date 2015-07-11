@@ -4,6 +4,7 @@
     <list default="true" id="74dd06af-788c-4cd9-a79c-b30852d83985" name="Default" comment="">
       <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/0002_auto_20150608_0933.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/clost/clost.py" afterPath="$PROJECT_DIR$/avatar/clost/clost.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/views.py" afterPath="$PROJECT_DIR$/avatar/views.py" />
     </list>
     <ignored path="avatar-api.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -40,7 +41,7 @@
         <entry file="file://$PROJECT_DIR$/avatar/views.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="165" column="44" selection-start-line="165" selection-start-column="44" selection-end-line="165" selection-end-column="44" />
+              <caret line="100" column="48" selection-start-line="100" selection-start-column="48" selection-end-line="100" selection-end-column="48" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -51,8 +52,8 @@
       <file leaf-file-name="clost.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.45723686">
-              <caret line="1258" column="42" selection-start-line="1258" selection-start-column="42" selection-end-line="1258" selection-end-column="42" />
+            <state vertical-scroll-proportion="0.63486844">
+              <caret line="1077" column="25" selection-start-line="1077" selection-start-column="25" selection-end-line="1077" selection-end-column="25" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#1114#1352#0" expanded="false" />
@@ -62,14 +63,14 @@
                 <element signature="e#2328#3381#0" expanded="false" />
                 <element signature="e#3744#5951#0" expanded="false" />
                 <element signature="e#6561#9959#0" expanded="false" />
-                <element signature="e#10558#11400#0" expanded="false" />
-                <element signature="e#11723#14669#0" expanded="false" />
-                <element signature="e#14842#18330#0" expanded="false" />
-                <element signature="e#18404#26767#0" expanded="false" />
-                <element signature="e#26839#40383#0" expanded="false" />
-                <element signature="e#40461#45313#0" expanded="false" />
-                <element signature="e#45424#47847#0" expanded="false" />
-                <element signature="e#47906#54562#0" expanded="false" />
+                <element signature="e#10558#11481#0" expanded="false" />
+                <element signature="e#11804#14819#0" expanded="false" />
+                <element signature="e#14992#18480#0" expanded="false" />
+                <element signature="e#18554#26917#0" expanded="false" />
+                <element signature="e#26989#40533#0" expanded="false" />
+                <element signature="e#40611#45463#0" expanded="false" />
+                <element signature="e#45574#47997#0" expanded="false" />
+                <element signature="e#56324#62877#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -107,8 +108,8 @@
         <option value="$PROJECT_DIR$/api/settings.py" />
         <option value="$PROJECT_DIR$/avatar/serializers.py" />
         <option value="$PROJECT_DIR$/avatar/urls.py" />
-        <option value="$PROJECT_DIR$/avatar/views.py" />
         <option value="$PROJECT_DIR$/avatar/models.py" />
+        <option value="$PROJECT_DIR$/avatar/views.py" />
         <option value="$PROJECT_DIR$/avatar/clost/clost.py" />
       </list>
     </option>
@@ -837,6 +838,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/avatar/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="100" column="48" selection-start-line="100" selection-start-column="48" selection-end-line="100" selection-end-column="48" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/avatar/models.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -847,20 +858,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/avatar/views.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="165" column="44" selection-start-line="165" selection-start-column="44" selection-end-line="165" selection-end-column="44" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.45723686">
-          <caret line="1258" column="42" selection-start-line="1258" selection-start-column="42" selection-end-line="1258" selection-end-column="42" />
+        <state vertical-scroll-proportion="0.63486844">
+          <caret line="1077" column="25" selection-start-line="1077" selection-start-column="25" selection-end-line="1077" selection-end-column="25" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#1114#1352#0" expanded="false" />
@@ -870,14 +871,14 @@
             <element signature="e#2328#3381#0" expanded="false" />
             <element signature="e#3744#5951#0" expanded="false" />
             <element signature="e#6561#9959#0" expanded="false" />
-            <element signature="e#10558#11400#0" expanded="false" />
-            <element signature="e#11723#14669#0" expanded="false" />
-            <element signature="e#14842#18330#0" expanded="false" />
-            <element signature="e#18404#26767#0" expanded="false" />
-            <element signature="e#26839#40383#0" expanded="false" />
-            <element signature="e#40461#45313#0" expanded="false" />
-            <element signature="e#45424#47847#0" expanded="false" />
-            <element signature="e#47906#54562#0" expanded="false" />
+            <element signature="e#10558#11481#0" expanded="false" />
+            <element signature="e#11804#14819#0" expanded="false" />
+            <element signature="e#14992#18480#0" expanded="false" />
+            <element signature="e#18554#26917#0" expanded="false" />
+            <element signature="e#26989#40533#0" expanded="false" />
+            <element signature="e#40611#45463#0" expanded="false" />
+            <element signature="e#45574#47997#0" expanded="false" />
+            <element signature="e#56324#62877#0" expanded="false" />
           </folding>
         </state>
       </provider>
