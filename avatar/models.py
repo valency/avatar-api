@@ -25,7 +25,7 @@ class SampleMeta(models.Model):
 
 class Sample(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    p = models.ForeignKey(Point)
+    p = models.ForeignKey(Point,related_name='sample')
     t = models.DateTimeField()
     speed = models.IntegerField(null=True)
     angle = models.IntegerField(null=True)
@@ -60,7 +60,7 @@ class Road(models.Model):
 
 class Trace(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
-    p = models.ManyToManyField(Sample)
+    p = models.ManyToManyField(Sample,related_name='trace')
 
     def __str__(self):
         return self.id
@@ -85,7 +85,7 @@ class Path(models.Model):
 class Trajectory(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
     taxi = models.CharField(max_length=255)
-    trace = models.ForeignKey(Trace, null=True)
+    trace = models.ForeignKey(Trace, related_name='trajectory',null=True)
     path = models.ForeignKey(Path, null=True)
 
     def __str__(self):

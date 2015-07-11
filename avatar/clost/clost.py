@@ -583,34 +583,54 @@ class RSpanningTree:
             while ind2<thr:
                 if ls_sample[ind2].p.lng<chil12.bounding_box.lng:
                     if ls_sample[ind2].p.lat<chil22.bounding_box.lat:
-                        RSpanningTree.inserttotree(chil11,traj,ls_sample[ind2],thr)
+                        trace_of_sample=copy.copy(ls_sample[ind2].trace.all()[0])
+                        traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                        RSpanningTree.inserttotree(chil11,traj_of_sample,ls_sample[ind2],thr)
+                        root.save()
                     else:
-                        RSpanningTree.inserttotree(chil21,traj,ls_sample[ind2],thr)
+                        trace_of_sample=copy.copy(ls_sample[ind2].trace.all()[0])
+                        traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                        RSpanningTree.inserttotree(chil21,traj_of_sample,ls_sample[ind2],thr)
+                        root.save()
                 elif ls_sample[ind2].p.lat<chil21.bounding_box.lat:
-                    RSpanningTree.inserttotree(chil12,traj,ls_sample[ind2],thr)
+                    trace_of_sample=copy.copy(ls_sample[ind2].trace.all()[0])
+                    traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                    RSpanningTree.inserttotree(chil12,traj_of_sample,ls_sample[ind2],thr)
+                    root.save()
                 else:
-                    RSpanningTree.inserttotree(chil22,traj,ls_sample[ind2],thr)
+                    trace_of_sample=copy.copy(ls_sample[ind2].trace.all()[0])
+                    traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                    RSpanningTree.inserttotree(chil22,traj_of_sample,ls_sample[ind2],thr)
+                    root.save()
                 ind2=ind2+1
             if sample.p.lng<root.get_children()[1].bounding_box.lng:
                 if sample.p.lat<root.get_children()[2].bounding_box.lat:
                     RSpanningTree.inserttotree(root.get_children()[0], traj,sample,thr)
+                    root.save()
                 else:
                     RSpanningTree.inserttotree(root.get_children()[2], traj,sample,thr)
+                    root.save()
             elif sample.p.lat<root.get_children()[2].bounding_box.lat:
                 RSpanningTree.inserttotree(root.get_children()[1],traj,sample,thr)
+                root.save()
             else:
                 RSpanningTree.inserttotree(root.get_children()[3],traj,sample,thr)
+                root.save()
             return
         else:
             if sample.p.lng<root.get_children()[1].bounding_box.lng:
                 if sample.p.lat<root.get_children()[2].bounding_box.lat:
                     RSpanningTree.inserttotree(root.get_children()[0], traj,sample,thr)
+                    root.save()
                 else:
                     RSpanningTree.inserttotree(root.get_children()[2], traj,sample,thr)
+                    root.save()
             elif sample.p.lat<root.get_children()[2].bounding_box.lat:
                 RSpanningTree.inserttotree(root.get_children()[1],traj,sample,thr)
+                root.save()
             else:
                 RSpanningTree.inserttotree(root.get_children()[3],traj,sample,thr)
+                root.save()
 
 
         return
@@ -798,27 +818,65 @@ class RSpanningTree:
                         root.save()
                         root.haschild=1
                         root.save()
+                        ind=0
+                        while ind<thr:
+                            if ls_sample[ind].p.lng<root.get_children()[1].bounding_box.lng:
+                                if ls_sample[ind].p.lat<root.get_children()[2].bounding_box.lat:
+                                    trace_of_sample=copy.copy(ls_sample[ind].trace.all()[0])
+                                    traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                                    RSpanningTree.inserttotree(root.get_children()[0], traj_of_sample,ls_sample[ind],thr)
+                                    root.save()
+                                else:
+                                    #trace_of_sample=ls_sample[ind].trace.all()[0]
+                                    #traj_of_sample=trace_of_sample.trajectory.all()[0]
+                                    trace_of_sample=copy.copy(ls_sample[ind].trace.all()[0])
+                                    traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                                    RSpanningTree.inserttotree(root.get_children()[2], traj_of_sample,ls_sample[ind],thr)
+                                    root.save()
+                            elif ls_sample[ind].p.lat<root.get_children()[2].bounding_box.lat:
+                                #trace_of_sample=ls_sample[ind].trace.all()[0]
+                                #traj_of_sample=trace_of_sample.trajectory.all()[0]
+                                trace_of_sample=copy.copy(ls_sample[ind].trace.all()[0])
+                                traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                                RSpanningTree.inserttotree(root.get_children()[1],traj_of_sample,ls_sample[ind],thr)
+                                root.save()
+                            else:
+                                #trace_of_sample=ls_sample[ind].trace.all()[0]
+                                #traj_of_sample=trace_of_sample.trajectory.all()[0]
+                                trace_of_sample=copy.copy(ls_sample[ind].trace.all()[0])
+                                traj_of_sample=copy.copy(trace_of_sample.trajectory.all()[0])
+                                RSpanningTree.inserttotree(root.get_children()[3],traj_of_sample,ls_sample[ind],thr)
+                                root.save()
+                            ind=copy.copy(ind)+1
                         #RSpanningTree.inserttotree(chil11,s.id,s.taxi,set_sample[k],thr)
                         if set_sample[k].p.lng<root.get_children()[1].bounding_box.lng:
                             if set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
                                 RSpanningTree.inserttotree(root.get_children()[0], s,set_sample[k],thr)
+                                root.save()
                             else:
                                 RSpanningTree.inserttotree(root.get_children()[2], s,set_sample[k],thr)
+                                root.save()
                         elif set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
                             RSpanningTree.inserttotree(root.get_children()[1],s,set_sample[k],thr)
+                            root.save()
                         else:
                             RSpanningTree.inserttotree(root.get_children()[3],s,set_sample[k],thr)
+                            root.save()
                         #return #root
                     else:
                         if set_sample[k].p.lng<root.get_children()[1].bounding_box.lng:
                             if set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
                                 RSpanningTree.inserttotree(root.get_children()[0], s,set_sample[k],thr)
+                                root.save()
                             else:
                                 RSpanningTree.inserttotree(root.get_children()[2], s,set_sample[k],thr)
+                                root.save()
                         elif set_sample[k].p.lat<root.get_children()[2].bounding_box.lat:
                             RSpanningTree.inserttotree(root.get_children()[1],s,set_sample[k],thr)
+                            root.save()
                         else:
                             RSpanningTree.inserttotree(root.get_children()[3],s,set_sample[k],thr)
+                            root.save()
                         #return #root
 
 
@@ -1031,6 +1089,7 @@ class RSpanningTree:
         occupancy=0
         #root3=RSpanningTree.addtoquadtree(root2, list_traj, thr)
         RSpanningTree.addtoquadtree(root2, list_traj, thr)
+        #return root2,'tree has been created'
         #return root2, root2.get_children()[0].get_children()[2].bounding_box.lat, root2.get_children()[0].bounding_box.lat,root2.get_children()[1].bounding_box.lat,root2.get_children()[2].bounding_box.lat,root2.get_children()[3].bounding_box.lat
         test_sample=root2.ls_sample.all()
         child=root2.get_children()[0]
@@ -1098,6 +1157,9 @@ class RSpanningTree:
             i=0
             while i<num_traj:
                 t_traj=copy.copy(ls_traj[i])
+                t_trace=t_traj.trace
+                lst_pt=t_trace.p.all()
+                print 'lst_pt[0].id = ',lst_pt[0].id
                 ls_trajid.append(t_traj.id)
                 i=i+1
         print 'ls_trajid', ls_trajid
