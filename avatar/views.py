@@ -154,7 +154,8 @@ def query_traj(request):
     #in the node list
     print 'we are before request.POST'
     if 'lng' in request.POST and 'lat' in request.POST and 'height' in request.POST and 'width' in request.POST \
-            and 'starttime' in request.POST and 'endtime' in request.POST:
+            and 'starttime' in request.POST and 'endtime' in request.POST and 'startdate' in request.POST \
+            and 'enddate' in request.POST:
         print 'we are after request.POST'
         lng=float(request.POST['lng'])
         lat=float(request.POST['lat'])
@@ -164,7 +165,9 @@ def query_traj(request):
         maxlat=lat+height
         starttime=request.POST['starttime'].split(':')
         endtime=request.POST['endtime'].split(':')
-        traj_found=RSpanningTree.query_traj(root,lng,lat,maxlng,maxlat,starttime,endtime)
+        startdate=request.POST['startdate'].split('-')
+        enddate=request.POST['enddate'].split('-')
+        traj_found=RSpanningTree.query_traj(root,lng,lat,maxlng,maxlat,starttime,endtime,startdate,enddate)
         return resp(200, traj_found)
     else:
         return resp(500, "parameter not correct")

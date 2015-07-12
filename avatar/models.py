@@ -163,6 +163,7 @@ class CloST(MPTTModel):
     ls_trajid=models.CharField(max_length=131071,null=True)
     context=models.CharField(max_length=131071, null=True)
     starttime=models.DateTimeField(null=True)
+    endtime=models.DateTimeField(null=True)
     timenode=models.ManyToManyField(TimeSlot)
     #ls_traj=[]
     #ls_sample=[]

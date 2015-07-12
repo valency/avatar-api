@@ -291,10 +291,43 @@ class RSpanningTree:
             month2=month2+1
         dif=dif+day1-anti_dif
         return dif
+    @staticmethod
+    def date_max(date1,date2):
+        #date=[year,month,day]
+        year1=date1[0]
+        month1=date1[1]
+        day1=date1[2]
+        year2=date2[0]
+        month2=date2[1]
+        day2=date2[2]
+        if year2>year1:
+            return 2
+        elif year1>year2:
+            return 1
+        else:
+            if month2>month1:
+                return 2
+            elif month1>month2:
+                return 1
+            else:
+                if day2>day1:
+                    return 2
+                elif day1>day2:
+                    return 1
+                else:
+                    return 0
 #*******************************************#*******************************************
 #*******************************************#*******************************************
 #*******************************************#*******************************************
-
+    @staticmethod
+    def date_min(date1,date2):
+        sign=RSpanningTree.date_max(date1,date2)
+        if sign==2:
+            return 1
+        elif sign==1:
+            return 2
+        else:
+            return 0
 
 
 
@@ -1047,24 +1080,26 @@ class RSpanningTree:
         num_traj=len(list_traj)
         i=0
         t_date=copy.copy(mindate)
-        dif_day=RSpanningTree.date_compare(maxdate,t_date)
+        dif_day=RSpanningTree.date_compare(copy.copy(maxdate),copy.copy(t_date))
         ls_ls_traj=[]
         ls_root=[]
         while dif_day>=0:
             ls_ls_traj.append([])
             ls_root.append(0)
             t_date=copy.copy(RSpanningTree.date_plus(t_date,1))
-            dif_day=RSpanningTree.date_compare(maxdate,t_date)
+            dif_day=RSpanningTree.date_compare(copy.copy(maxdate),copy.copy(t_date))
+        print 'dif_day is ', dif_day
 
         while i<num_traj:
-            t_traj=list_traj[i]
+            t_traj=copy.copy(list_traj[i])
             t_trace=t_traj.trace
             t_sample=t_trace.p.all()[0]
             t_time=str(t_sample.t).split('+')
             raw_time = RSpanningTree.time_split(t_time[0])
-            dateid=RSpanningTree.date_compare(raw_time[0],mindate)
-            ls_ls_traj[dateid].append(t_traj)
+            dateid=RSpanningTree.date_compare(copy.copy(raw_time[0]),copy.copy(mindate))
+            ls_ls_traj[dateid].append(copy.copy(t_traj))
             i=i+1
+        print 'num_traj is ', num_traj
 
         reso_lat=0.02
         reso_lng=0.05
@@ -1102,15 +1137,18 @@ class RSpanningTree:
 
         rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
         rect.save()
-        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind)
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind,endtime=temp_maxd)
         root2.save()
+        print 'temp_mind is ',temp_mind, 'temp_maxd is ', temp_maxd
 
         i=0
         t_date=copy.copy(mindate)
-        dif_day=RSpanningTree.date_compare(maxdate,t_date)
+        dif_day=RSpanningTree.date_compare(copy.copy(maxdate),copy.copy(t_date))
+        print 'dif_day is ', dif_day
+        #return root2, 'ppp'
         while dif_day>=0:
-            t_date=copy.copy(RSpanningTree.date_plus(t_date,1))
-            dif_day=RSpanningTree.date_compare(maxdate,t_date)
+            t_date=copy.copy(RSpanningTree.date_plus(copy.copy(t_date),1))
+            dif_day=RSpanningTree.date_compare(copy.copy(maxdate),copy.copy(t_date))
             ls_root[i]=RSpanningTree.create_tree(ls_ls_traj[i])
             ls_root[i][0].parent=root2
             ls_root[i][0].save()
@@ -1119,6 +1157,7 @@ class RSpanningTree:
 
 
         #return ls_root[0]
+        print 'number of children of root2 is ', len(root2.get_children())
         return root2.get_children()[0],root2.get_children()[0].haschild
     @staticmethod
     def create_tree(list_traj):
@@ -1205,7 +1244,7 @@ class RSpanningTree:
         #lng_start=tt_lng_start
         rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
         rect.save()
-        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind)
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind,endtime=temp_maxd)
         root2.save()
         #root2.haschild=0
         root2.save()
@@ -1262,17 +1301,88 @@ class RSpanningTree:
         # return root
 
     @staticmethod
-    def query_traj(root,tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,tgt_stime,tgt_etime):
+    def query_traj(root,tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,tgt_stime,tgt_etime,tgt_sdate,tgt_edate):
         min_lng=copy.copy(root.bounding_box.lng)
         min_lat=copy.copy(root.bounding_box.lat)
         width=copy.copy(root.bounding_box.width)
         height=copy.copy(root.bounding_box.height)
         max_lng=min_lng+width
         max_lat=min_lat+height
-        stime=[0,0,0]
-        etime=[23,59,59]
+        ls_root=[]
         ls_trajid=[]
         ls_leafnode=[]
+        print tgt_sdate,tgt_edate
+        tgt_sdate[0]=copy.copy(int(tgt_sdate[0]))
+        tgt_sdate[1]=copy.copy(int(tgt_sdate[1]))
+        tgt_sdate[2]=copy.copy(int(tgt_sdate[2]))
+        tgt_edate[0]=copy.copy(int(tgt_edate[0]))
+        tgt_edate[1]=copy.copy(int(tgt_edate[1]))
+        tgt_edate[2]=copy.copy(int(tgt_edate[2]))
+        print tgt_sdate,tgt_edate
+        #return 'aaa'
+        num_day=RSpanningTree.date_compare(tgt_edate,tgt_sdate)+1
+        i=0
+        starttime=copy.copy(str(root.starttime)).split('+')
+        raw_date = RSpanningTree.time_split(starttime[0])
+        print raw_date
+        #return 'aaa'
+        min_date=raw_date[0]
+        print 'min_date is ', min_date
+        dif=len(root.get_children())-1
+        print 'min_date is ', min_date, 'dif is ', dif
+        max_date=RSpanningTree.date_plus(copy.copy(min_date),dif)
+        print 'min_date is ', min_date
+        sign1=RSpanningTree.date_max(copy.copy(tgt_edate),copy.copy(min_date))
+        print 'min_date is ', min_date
+        print tgt_edate,min_date
+        print 'we are before checking'
+        print root.get_children()[0].starttime,root.get_children()[1].starttime,root.get_children()[2].starttime
+        if sign1==2:
+            print 'sign1==2'
+            return ls_trajid
+        sign2=RSpanningTree.date_max(copy.copy(tgt_sdate),copy.copy(max_date))
+        if sign2==1:
+            print 'sign2==1'
+            return ls_trajid
+        sign3=RSpanningTree.date_max(copy.copy(tgt_sdate),copy.copy(min_date))
+        if sign3==1:
+            q_sdate=tgt_sdate
+        else:
+            q_sdate=min_date
+        sign4=RSpanningTree.date_max(copy.copy(tgt_edate),copy.copy(max_date))
+        if sign4==1:
+            q_edate=max_date
+        else:
+            q_edate=tgt_edate
+        num_day=RSpanningTree.date_compare(copy.copy(q_edate),copy.copy(q_sdate))+1
+        date_add=RSpanningTree.date_compare(copy.copy(q_sdate),copy.copy(min_date))
+        print 'q_sdate is ',q_sdate, 'q_edate is ', q_edate
+        i=0
+        while i<num_day:
+            date_id=copy.copy(i)+copy.copy(date_add)
+            ls_root.append(root.get_children()[date_id])
+            i=i+1
+        # sign2=RSpanningTree.date_max(tgt_edate,raw_date[0])
+        # if sign2==2:
+        #     return ls_trajid
+        # elif sign2==0:
+        #     ls_root.append(root.get_children()[0])
+        # else:
+        #     sign1=RSpanningTree.date_max(tgt_sdate,raw_date[0])
+        #     if sign1==1:
+        #         day_dif=RSpanningTree.date_compare(raw_date[0],tgt_sdate)
+        #         if day_dif>=len(root.get_children()):
+        #             return ls_trajid
+        #         else:
+        #
+        # date_add=RSpanningTree.date_compare(tgt_sdate,raw_date[0])
+        #
+        # while i<num_day:
+        #     id_date=i+date_add
+        #     ls_root.append(root.get_children()[id_date])
+        #     i=i+1
+        stime=[0,0,0]
+        etime=[23,59,59]
         print 'min_lng is ',min_lng
         print 'max_lng is ',max_lng
         print 'min_lat is ',min_lat
@@ -1296,37 +1406,43 @@ class RSpanningTree:
         int_tgt_stime=RSpanningTree.time_to_sec([int(tgt_stime[0]),int(tgt_stime[1]),int(tgt_stime[2])])
         int_tgt_etime=RSpanningTree.time_to_sec([int(tgt_etime[0]),int(tgt_etime[1]),int(tgt_etime[2])])
         print int_tgt_etime,int_tgt_stime
-        if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
-            if root.haschild==0:
-                ls_leafnode.append([root,1])
-                print '**************************************\n'
-                print max_lat,max_lng,1
-            else:
-                RSpanningTree.pickchildren(root.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[2],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[3],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
-        elif tgt_maxlng<=min_lng or tgt_minlng>=max_lng or tgt_maxlat<=min_lat or tgt_minlat>=max_lat:
-            return
+        i=0
+        num_day=len(ls_root)
+        print 'num of roots to be searched', num_day
+        while i<num_day:
+            root2=ls_root[i]
+            if tgt_minlng<=min_lng and tgt_minlat<=min_lat and tgt_maxlng>=max_lng and tgt_maxlat>=max_lat:
+                if root2.haschild==0:
+                    ls_leafnode.append([root,1])
+                    print '**************************************\n'
+                    print max_lat,max_lng,1
+                else:
+                    RSpanningTree.pickchildren(root2.get_children()[0],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[1],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[2],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[3],tgt_minlng,tgt_minlat,tgt_maxlng,tgt_maxlat,ls_leafnode)
+            elif tgt_maxlng<=min_lng or tgt_minlng>=max_lng or tgt_maxlat<=min_lat or tgt_minlat>=max_lat:
+                return
         #elif tgt_maxlng<=max_lng:
-        else:
-            new_tgt_maxlat=copy.copy(min(tgt_maxlat,max_lat))
-            new_tgt_minlat=copy.copy(max(tgt_minlat,min_lat))
-            new_tgt_maxlng=copy.copy(min(tgt_maxlng,max_lng))
-            new_tgt_minlng=copy.copy(max(tgt_minlng,min_lng))
-            if root.haschild==1:
-                RSpanningTree.pickchildren(root.get_children()[0],new_tgt_minlng,new_tgt_minlat,
-                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[1],new_tgt_minlng,new_tgt_minlat,
-                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[2],new_tgt_minlng,new_tgt_minlat,
-                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
-                RSpanningTree.pickchildren(root.get_children()[3],new_tgt_minlng,new_tgt_minlat,
-                                           new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
             else:
-                ls_leafnode.append([root,0])
-                print '**************************************\n'
-                print new_tgt_minlng,new_tgt_minlat,new_tgt_maxlng,new_tgt_maxlat,0
+                new_tgt_maxlat=copy.copy(min(tgt_maxlat,max_lat))
+                new_tgt_minlat=copy.copy(max(tgt_minlat,min_lat))
+                new_tgt_maxlng=copy.copy(min(tgt_maxlng,max_lng))
+                new_tgt_minlng=copy.copy(max(tgt_minlng,min_lng))
+                if root2.haschild==1:
+                    RSpanningTree.pickchildren(root2.get_children()[0],new_tgt_minlng,new_tgt_minlat,
+                                               new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[1],new_tgt_minlng,new_tgt_minlat,
+                                               new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[2],new_tgt_minlng,new_tgt_minlat,
+                                               new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                    RSpanningTree.pickchildren(root2.get_children()[3],new_tgt_minlng,new_tgt_minlat,
+                                               new_tgt_maxlng,new_tgt_maxlat,ls_leafnode)
+                else:
+                    ls_leafnode.append([root2,0])
+                    print '**************************************\n'
+                    print new_tgt_minlng,new_tgt_minlat,new_tgt_maxlng,new_tgt_maxlat,0
+            i=i+1
 
         print 'ls_trajid', ls_trajid
         print 'number of nodes', len(ls_leafnode)
