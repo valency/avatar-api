@@ -1065,6 +1065,46 @@ class RSpanningTree:
             dateid=RSpanningTree.date_compare(raw_time[0],mindate)
             ls_ls_traj[dateid].append(t_traj)
             i=i+1
+
+        reso_lat=0.02
+        reso_lng=0.05
+        temp_lng=reso_lng
+        temp_lat=reso_lat
+        lat_round=1
+        lng_round=1
+        while temp_lng<1:
+            temp_lng=temp_lng*10
+            lng_round=lng_round*10
+        while temp_lat<1:
+            temp_lat=temp_lat*10
+            lat_round=lat_round*10
+        lng_start=int(minlng*lng_round)
+        lat_start=int(minlat*lat_round)
+        lng_end=int(maxlng*lng_round)+1
+        lat_end=int(maxlat*lat_round)+1
+        tt_lng_start=float(lng_start/lng_round)
+        tt_lat_start=float(lat_start/lat_round)
+        tw1=copy.copy(float(lng_end-lng_start)/float(lng_round))
+        tw2=copy.copy(minlng-tt_lng_start)
+        twidth=copy.copy(tw1)+copy.copy(tw2)
+        th1=copy.copy(float(lat_end-lat_start)/float(lat_round))
+        th2=copy.copy(minlat-tt_lat_start)
+        theight=copy.copy(th1)+copy.copy(th2)
+
+        year=str(maxdate[0])
+        month=str(maxdate[1])
+        day=str(maxdate[2])
+        temp_maxd=copy.copy(str(year))+'-'+copy.copy(str(month))+'-'+copy.copy(str(day))+' 23:59:59'
+        year=str(mindate[0])
+        month=str(mindate[1])
+        day=str(mindate[2])
+        temp_mind=copy.copy(str(year))+'-'+copy.copy(str(month))+'-'+copy.copy(str(day))+' 00:00:00'
+
+        rect=avatar.models.Rect(lat=tt_lat_start,lng=tt_lng_start,width=twidth,height=theight)
+        rect.save()
+        root2=avatar.models.CloST(bounding_box=rect,haschild=0,occupancy=0,context='',starttime=temp_mind)
+        root2.save()
+
         i=0
         t_date=copy.copy(mindate)
         dif_day=RSpanningTree.date_compare(maxdate,t_date)
@@ -1072,10 +1112,14 @@ class RSpanningTree:
             t_date=copy.copy(RSpanningTree.date_plus(t_date,1))
             dif_day=RSpanningTree.date_compare(maxdate,t_date)
             ls_root[i]=RSpanningTree.create_tree(ls_ls_traj[i])
+            ls_root[i][0].parent=root2
+            ls_root[i][0].save()
+            root2.save()
             i=i+1
 
 
-        return ls_root[0]
+        #return ls_root[0]
+        return root2.get_children()[0],root2.get_children()[0].haschild
     @staticmethod
     def create_tree(list_traj):
         #[lat,lng]=RSpanningTree.find(list_traj)#list_traj is a list of Trajectory

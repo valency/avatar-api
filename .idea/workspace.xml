@@ -4,7 +4,6 @@
     <list default="true" id="74dd06af-788c-4cd9-a79c-b30852d83985" name="Default" comment="">
       <change type="DELETED" beforePath="$PROJECT_DIR$/avatar/migrations/0002_auto_20150608_0933.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/clost/clost.py" afterPath="$PROJECT_DIR$/avatar/clost/clost.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/avatar/views.py" afterPath="$PROJECT_DIR$/avatar/views.py" />
     </list>
     <ignored path="avatar-api.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -52,8 +51,8 @@
       <file leaf-file-name="clost.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.63486844">
-              <caret line="1077" column="25" selection-start-line="1077" selection-start-column="25" selection-end-line="1077" selection-end-column="25" />
+            <state vertical-scroll-proportion="0.533437">
+              <caret line="1121" column="71" selection-start-line="1121" selection-start-column="71" selection-end-line="1121" selection-end-column="71" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#1114#1352#0" expanded="false" />
@@ -70,7 +69,8 @@
                 <element signature="e#26989#40533#0" expanded="false" />
                 <element signature="e#40611#45463#0" expanded="false" />
                 <element signature="e#45574#47997#0" expanded="false" />
-                <element signature="e#56324#62877#0" expanded="false" />
+                <element signature="e#51230#57886#0" expanded="false" />
+                <element signature="e#58004#64557#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -118,7 +118,7 @@
     <order />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="65" />
+    <option name="x" value="2455" />
     <option name="y" value="-744" />
     <option name="width" value="1301" />
     <option name="height" value="744" />
@@ -146,6 +146,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -212,7 +213,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scratches" />
       <pane id="Scope" />
     </panes>
   </component>
@@ -383,7 +383,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-744" width="1301" height="744" extended-state="6" />
+    <frame x="2455" y="-744" width="1301" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -397,13 +397,13 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39906833" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -838,16 +838,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/avatar/views.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="100" column="48" selection-start-line="100" selection-start-column="48" selection-end-line="100" selection-end-column="48" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/avatar/models.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -858,10 +848,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/avatar/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="100" column="48" selection-start-line="100" selection-start-column="48" selection-end-line="100" selection-end-column="48" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/avatar/clost/clost.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.63486844">
-          <caret line="1077" column="25" selection-start-line="1077" selection-start-column="25" selection-end-line="1077" selection-end-column="25" />
+        <state vertical-scroll-proportion="0.533437">
+          <caret line="1121" column="71" selection-start-line="1121" selection-start-column="71" selection-end-line="1121" selection-end-column="71" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#1114#1352#0" expanded="false" />
@@ -878,7 +878,8 @@
             <element signature="e#26989#40533#0" expanded="false" />
             <element signature="e#40611#45463#0" expanded="false" />
             <element signature="e#45574#47997#0" expanded="false" />
-            <element signature="e#56324#62877#0" expanded="false" />
+            <element signature="e#51230#57886#0" expanded="false" />
+            <element signature="e#58004#64557#0" expanded="false" />
           </folding>
         </state>
       </provider>
