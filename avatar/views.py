@@ -38,6 +38,7 @@ def add_traj_from_local_file(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
 def get_traj_by_id(request):
     if 'id' in request.GET:
         try:
@@ -49,6 +50,7 @@ def get_traj_by_id(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
 def remove_traj_by_id(request):
     if 'id' in request.GET:
         traj = Trajectory.objects.get(id=request.GET['id'])
@@ -58,6 +60,7 @@ def remove_traj_by_id(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
 def get_all_traj_id(request):
     return Response({
         "ids": Trajectory.objects.values_list('id', flat=True).order_by('id')
