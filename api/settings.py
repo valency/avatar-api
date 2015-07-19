@@ -47,13 +47,16 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = 'api.wsgi.application'
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
     'PAGE_SIZE': 10
 }
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = (
-    'nicpu3.cse.ust.hk'
-)
+CORS_ORIGIN_WHITELIST = ()
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
