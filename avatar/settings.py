@@ -2,4 +2,4 @@ class Settings:
     def __init__(self):
         pass
 
-    CSV_UPLOAD_DIR = "/var/www/html/projects/avatar/data/"
+    CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"

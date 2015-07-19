@@ -1,19 +1,12 @@
 import uuid
 
-from rest_framework.renderers import JSONRenderer
-from django.http import HttpResponse
-from rest_framework import viewsets
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import viewsets, status
 
 from settings import Settings
 from serializers import *
-
-
-class JSONResponse(HttpResponse):
-    def __init__(self, data, **kwargs):
-        content = JSONRenderer().render(data)
-        kwargs['content_type'] = 'application/json;charset=utf-8'
-        super(JSONResponse, self).__init__(content, **kwargs)
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
@@ -31,42 +24,41 @@ class IntersectionViewSet(viewsets.ModelViewSet):
     serializer_class = IntersectionSerializer
 
 
-def resp(status, content):
-    return JSONResponse({"status": status, "content": content})
-
-
+@api_view(['GET'])
 def add_traj_from_local_file(request):
-    if 'taxi' in request.POST and 'src' in request.POST and 'header' in request.POST:
-        traj = Trajectory(id=str(uuid.uuid4()), taxi=request.POST['taxi'])
+    if 'taxi' in request.GET and 'src' in request.GET and 'header' in request.GET:
+        traj = Trajectory(id=str(uuid.uuid4()), taxi=request.GET['taxi'])
         traj.save()
         try:
-            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.POST['src'], request.POST['taxi'], request.POST['header'].split(","))
-        except IOError as e:
-            return resp(500, "io error ({0}): {1}".format(e.errno, e.strerror))
-        return resp(200, TrajectorySerializer(traj).data)
+            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.GET['src'], request.GET['taxi'], request.GET['header'].split(","))
+        except IOError:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(TrajectorySerializer(traj).data)
     else:
-        return resp(500, "parameter not correct")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_traj_by_id(request):
     if 'id' in request.GET:
         try:
             traj = Trajectory.objects.get(id=request.GET['id'])
-            return resp(200, TrajectorySerializer(traj).data)
+            return Response(TrajectorySerializer(traj).data)
         except ObjectDoesNotExist:
-            return resp(404, "trajectory not exist")
+            return Response(status=status.HTTP_404_NOT_FOUND)
     else:
-        return resp(500, "parameter not correct")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 def remove_traj_by_id(request):
     if 'id' in request.GET:
         traj = Trajectory.objects.get(id=request.GET['id'])
         traj.delete()
-        return resp(200, "success")
+        return Response(status=status.HTTP_204_NO_CONTENT)
     else:
-        return resp(500, "parameter not correct")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_all_traj_id(request):
-    return resp(200, TrajectoryListSerializer(Trajectory.objects.all(), many=True).data)
+    return Response({
+        "ids": Trajectory.objects.values_list('id', flat=True).order_by('id')
+    })
