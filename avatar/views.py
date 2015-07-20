@@ -1,11 +1,12 @@
 import uuid
+import csv
+import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 
-from settings import Settings
 from serializers import *
 
 
@@ -26,14 +27,36 @@ class IntersectionViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 def add_traj_from_local_file(request):
-    if 'taxi' in request.GET and 'src' in request.GET and 'header' in request.GET:
-        traj = Trajectory(id=str(uuid.uuid4()), taxi=request.GET['taxi'])
-        traj.save()
+    if 'src' in request.GET:
         try:
-            traj.from_csv(Settings.CSV_UPLOAD_DIR + request.GET['src'], request.GET['taxi'], request.GET['header'].split(","))
+            ids = []
+            traj = None
+            with open(request.GET["src"]) as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
+                    if traj is None or row['taxi'] != traj.taxi:
+                        # Create new trajectory
+                        uuid_id = str(uuid.uuid4())
+                        trace = Trace(id=uuid_id)
+                        trace.save()
+                        traj = Trajectory(id=uuid_id, taxi=row['taxi'], trace=trace)
+                        traj.save()
+                        ids.append(uuid_id)
+                    # Append current point
+                    sampleid = row["id"]
+                    p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
+                    p.save()
+                    t = datetime.datetime.strptime(row["t"], "%Y-%m-%d %H:%M:%S")
+                    speed = int(row["speed"])
+                    angle = int(row["angle"])
+                    occupy = int(row["occupy"])
+                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                    sample.save()
+                    traj.trace.p.add(sample)
+                    traj.save()
+            return Response({"ids": ids})
         except IOError:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response(TrajectorySerializer(traj).data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
