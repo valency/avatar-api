@@ -4,6 +4,7 @@ import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
+
 from rest_framework.response import Response
 
 from rest_framework import viewsets, status
@@ -37,6 +38,9 @@ def add_traj_from_local_file(request):
                 reader = csv.DictReader(csvfile)
                 for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
                     if traj is None or row['taxi'] != traj.taxi:
+                        if traj is not None:
+                            # Save previous trajectory
+                            traj.save()
                         # Create new trajectory
                         uuid_id = str(uuid.uuid4())
                         trace = Trace(id=uuid_id)
@@ -55,7 +59,8 @@ def add_traj_from_local_file(request):
                     sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
                     sample.save()
                     traj.trace.p.add(sample)
-                    traj.save()
+            # Save the last trajectory
+            traj.save()
             return Response({"ids": ids})
         except IOError:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
