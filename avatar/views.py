@@ -81,8 +81,15 @@ def get_traj_by_id(request):
         if "ts" in request.GET and "td" in request.GET:
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
-            pruned = copy.deepcopy(traj)
-            pruned["trace"]["p"] = []
+            pruned = {
+                "id": traj["id"],
+                "trace": {
+                    "id": traj["trace"]["id"],
+                    "p": []
+                },
+                "path": copy.deepcopy(traj["path"]),
+                "taxi": traj["taxi"]
+            }
             for p in traj["trace"]["p"]:
                 t = datetime.strptime(p["t"], "%Y-%m-%d %H:%M:%S").time()
                 if ts <= t <= td:
