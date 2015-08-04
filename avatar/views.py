@@ -79,7 +79,7 @@ def get_traj_by_id(request):
             return Response(status=status.HTTP_404_NOT_FOUND)
         if "ts" in request.GET and "td" in request.GET:
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
-            td = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
+            td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
             pruned = traj
             pruned["p"] = []
             for p in traj["trace"]["p"]:
