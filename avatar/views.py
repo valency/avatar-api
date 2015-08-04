@@ -1,10 +1,9 @@
 import uuid
 import csv
-import datetime
+from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
-
 from rest_framework.response import Response
 
 from rest_framework import viewsets, status
@@ -52,7 +51,7 @@ def add_traj_from_local_file(request):
                     sampleid = row["id"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
                     p.save()
-                    t = datetime.datetime.strptime(row["t"], "%Y-%m-%d %H:%M:%S")
+                    t = datetime.strptime(row["t"], "%Y-%m-%d %H:%M:%S")
                     speed = int(row["speed"])
                     angle = int(row["angle"])
                     occupy = int(row["occupy"])
@@ -73,9 +72,20 @@ def get_traj_by_id(request):
     if 'id' in request.GET:
         try:
             traj = Trajectory.objects.get(id=request.GET['id'])
-            return Response(TrajectorySerializer(traj).data)
+            traj = TrajectorySerializer(traj).data
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        if "ts" in request.GET and "td" in request.GET:
+            ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
+            td = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
+            pruned = traj
+            pruned.p = []
+            for p in traj.trace.p:
+                t = datetime.strptime(p.t, "%Y-%m-%d %H:%M:%S").time()
+                if ts <= t <= td: pruned.p.append(p)
+            return Response(pruned)
+        else:
+            return Response(traj)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
