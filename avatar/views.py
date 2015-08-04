@@ -81,14 +81,11 @@ def get_traj_by_id(request):
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
             pruned = traj
-            pruned["p"] = []
+            pruned["trace"]["p"] = []
             for p in traj["trace"]["p"]:
                 t = datetime.strptime(p["t"], "%Y-%m-%d %H:%M:%S").time()
                 if ts <= t <= td:
-                    pruned["p"].append(p)
-                else:
-                    print p
-                    print ts, td, t
+                    pruned["trace"]["p"].append(p)
             return Response(pruned)
         else:
             return Response(traj)
