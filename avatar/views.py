@@ -3,6 +3,7 @@ import csv
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework.decorators import api_view
 
 from rest_framework.response import Response
@@ -99,6 +100,12 @@ def remove_traj_by_id(request):
         return Response(status=status.HTTP_204_NO_CONTENT)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def remove_all_traj(request):
+    Trajectory.objects.all().delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET'])

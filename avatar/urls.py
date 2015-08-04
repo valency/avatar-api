@@ -14,5 +14,6 @@ urlpatterns = [
     url(r'^api/traj/import/$', views.add_traj_from_local_file),
     url(r'^api/traj/get/$', views.get_traj_by_id),
     url(r'^api/traj/remove/$', views.remove_traj_by_id),
+    url(r'^api/traj/remove_all/$', views.remove_all_traj),
     url(r'^api/traj/get_all/$', views.get_all_traj_id),
 ]
