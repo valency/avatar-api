@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
+
 from rest_framework.response import Response
 
 from rest_framework import viewsets, status
@@ -79,10 +80,10 @@ def get_traj_by_id(request):
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             td = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             pruned = traj
-            pruned.p = []
-            for p in traj.trace.p:
-                t = datetime.strptime(p.t, "%Y-%m-%d %H:%M:%S").time()
-                if ts <= t <= td: pruned.p.append(p)
+            pruned["p"] = []
+            for p in traj["trace"]["p"]:
+                t = datetime.strptime(p["t"], "%Y-%m-%d %H:%M:%S").time()
+                if ts <= t <= td: pruned["p"].append(p)
             return Response(pruned)
         else:
             return Response(traj)
