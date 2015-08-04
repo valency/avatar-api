@@ -88,6 +88,7 @@ def get_traj_by_id(request):
                     pruned["p"].append(p)
                 else:
                     print p
+                    print ts, td, t
             return Response(pruned)
         else:
             return Response(traj)
