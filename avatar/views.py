@@ -1,6 +1,5 @@
 import uuid
 import csv
-import copy
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -87,7 +86,7 @@ def get_traj_by_id(request):
                     "id": traj["trace"]["id"],
                     "p": []
                 },
-                "path": copy.deepcopy(traj["path"]),
+                "path": traj["path"],
                 "taxi": traj["taxi"]
             }
             for p in traj["trace"]["p"]:
