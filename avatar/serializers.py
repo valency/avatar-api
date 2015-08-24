@@ -64,3 +64,10 @@ class TrajectorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trajectory
+
+
+class RoadNetworkSerializer(serializers.ModelSerializer):
+    road = RoadSerializer(many=True)
+
+    class Meta:
+        model = RoadNetwork

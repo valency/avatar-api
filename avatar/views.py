@@ -3,13 +3,9 @@ import csv
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-
 from rest_framework.decorators import api_view
-
 from rest_framework.response import Response
-
 from rest_framework import viewsets, status
-
 from serializers import *
 from settings import *
 
@@ -24,19 +20,14 @@ class RoadViewSet(viewsets.ModelViewSet):
     serializer_class = RoadSerializer
 
 
-class IntersectionViewSet(viewsets.ModelViewSet):
-    queryset = Intersection.objects.all()
-    serializer_class = IntersectionSerializer
-
-
 @api_view(['GET'])
 def add_traj_from_local_file(request):
     if 'src' in request.GET:
         try:
             ids = []
             traj = None
-            with open(CSV_UPLOAD_DIR + request.GET["src"]) as csvfile:
-                reader = csv.DictReader(csvfile)
+            with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
+                reader = csv.DictReader(csv_file)
                 for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
                     if traj is None or row['taxi'] != traj.taxi:
                         if traj is not None:
@@ -50,19 +41,76 @@ def add_traj_from_local_file(request):
                         traj.save()
                         ids.append(uuid_id)
                     # Append current point
-                    sampleid = row["id"]
+                    sample_id = row["id"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
                     p.save()
                     t = datetime.strptime(row["t"], "%Y-%m-%d %H:%M:%S")
                     speed = int(row["speed"])
                     angle = int(row["angle"])
                     occupy = int(row["occupy"])
-                    sample = Sample(id=sampleid, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
+                    sample = Sample(id=sample_id, p=p, t=t, speed=speed, angle=angle, occupy=occupy, src=0)
                     sample.save()
                     traj.trace.p.add(sample)
             # Save the last trajectory
             traj.save()
             return Response({"ids": ids})
+        except IOError:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def create_road_network_from_local_file(request):
+    intersections = []
+
+    def find_intersection_from_set(pp):
+        for ii in intersections:
+            if ii.p.lat == pp.lat and ii.p.lng == pp.lng:
+                return ii
+        ii = Intersection(id=uuid.uuid4(), p=pp)
+        ii.save()
+        intersections.append(intersection)
+        return ii
+
+    if 'src' in request.GET and 'city' in request.GET:
+        try:
+            city = request.GET["city"]
+            road_network = RoadNetwork(city=city)
+            road_network.save()
+            with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
+                reader = csv.DictReader(csv_file)
+                road = None
+                for row in reader:
+                    road_id = city + "-" + row["roadid"] + "-" + row["partid"]
+                    p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
+                    p.save()
+                    if road is None or road_id != road.id:
+                        if road is not None:
+                            # Add intersection for last point
+                            intersection = find_intersection_from_set(road.p.last())
+                            road.intersection.add(intersection)
+                            # Save previous road
+                            road.save()
+                        # Create new road
+                        road = Road(id=road_id)
+                        road.save()
+                        road_network.roads.add(road)
+                        # Add intersection for first point
+                        intersection = find_intersection_from_set(p)
+                        road.intersection.add(intersection)
+                    # Append current point
+                    road.p.add(p)
+            # Save the last road
+            road.save()
+            # Save the road network
+            road_network.save()
+            return Response({
+                "road_network_id": road_network.id,
+                "road_network_name": road_network.city,
+                "road_count": road_network.roads.count(),
+                "intersection_count": len(intersections)
+            })
         except IOError:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:

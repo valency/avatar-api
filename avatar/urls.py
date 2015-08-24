@@ -4,9 +4,8 @@ from rest_framework import routers
 import views
 
 router = routers.DefaultRouter()
-router.register(r'trajectories', views.TrajectoryViewSet)
 router.register(r'roads', views.RoadViewSet)
-router.register(r'intersections', views.IntersectionViewSet)
+router.register(r'trajectories', views.TrajectoryViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
@@ -16,4 +15,5 @@ urlpatterns = [
     url(r'^api/traj/remove/$', views.remove_traj_by_id),
     url(r'^api/traj/remove_all/$', views.remove_all_traj),
     url(r'^api/traj/get_all/$', views.get_all_traj_id),
+    url(r'^api/road_network/create/$', views.create_road_network_from_local_file),
 ]

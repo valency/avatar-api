@@ -41,7 +41,7 @@ class Intersection(models.Model):
 
 
 class Road(models.Model):
-    id = models.CharField(max_length=36, primary_key=True)
+    id = models.CharField(max_length=64, primary_key=True)
     name = models.CharField(max_length=255, null=True)
     type = models.IntegerField(null=True)
     length = models.IntegerField(null=True)
@@ -109,9 +109,6 @@ class Rect(models.Model):
             return False
 
 
-class CloST(MPTTModel):
-    bounding_box = models.ForeignKey(Rect)
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
-
-    class MPTTMeta:
-        order_insertion_by = ['bounding_box']
+class RoadNetwork(models.Model):
+    city = models.CharField(max_length=32, unique=True)
+    roads = models.ManyToManyField(Road)
