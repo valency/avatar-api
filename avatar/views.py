@@ -6,8 +6,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+
 from serializers import *
-from settings import *
+
+CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
