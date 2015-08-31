@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^api/traj/remove_all/$', views.remove_all_traj),
     url(r'^api/traj/get_all/$', views.get_all_traj_id),
     url(r'^api/road_network/create/$', views.create_road_network_from_local_file),
+    url(r'^api/road_network/remove/$', views.remove_road_network),
 ]

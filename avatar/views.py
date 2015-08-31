@@ -171,3 +171,13 @@ def get_all_traj_id(request):
     return Response({
         "ids": Trajectory.objects.values_list('id', flat=True).order_by('id')
     })
+
+
+@api_view(['GET'])
+def remove_road_network(request):
+    if 'city' in request.GET:
+        road_network = RoadNetwork.objects.get(city=request.GET['city'])
+        road_network.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
