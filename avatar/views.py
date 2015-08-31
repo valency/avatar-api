@@ -72,7 +72,7 @@ def create_road_network_from_local_file(request):
                 return ii
         ii = Intersection(id=uuid.uuid4(), p=pp)
         ii.save()
-        intersections.append(intersection)
+        intersections.append(ii)
         return ii
 
     if 'src' in request.GET and 'city' in request.GET:
