@@ -105,6 +105,9 @@ def create_road_network_from_local_file(request):
                     road.p.add(p)
             # Save the last road
             road.save()
+            # Append all intersections
+            for intersection in intersections:
+                road_network.intersections.add(intersection)
             # Save the road network
             road_network.save()
             return Response({
@@ -177,6 +180,14 @@ def get_all_traj_id(request):
 def remove_road_network(request):
     if 'city' in request.GET:
         road_network = RoadNetwork.objects.get(city=request.GET['city'])
+        # Delete all intersections associated with the road network
+        for road in road_network.roads.all():
+            road_network.roads.remove(road)
+            road.delete()
+        # Delete all intersections associated with the road network
+        for intersection in road_network.intersections.all():
+            road_network.intersections.remove(intersection)
+            intersection.delete()
         road_network.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     else:

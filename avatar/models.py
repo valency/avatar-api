@@ -112,3 +112,4 @@ class Rect(models.Model):
 class RoadNetwork(models.Model):
     city = models.CharField(max_length=32, unique=True)
     roads = models.ManyToManyField(Road)
+    intersections = models.ManyToManyField(Intersection)
