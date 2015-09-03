@@ -83,17 +83,18 @@ def create_road_network_from_local_file(request):
             with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
                 road = None
-                linecount = 0
+                last_p = None
+                line_count = 0
                 for row in reader:
-                    print "\rImporting Row: " + str(linecount),
-                    linecount += 1
+                    print "\rImporting Row: " + str(line_count),
+                    line_count += 1
                     road_id = city + "-" + row["roadid"] + "-" + row["partid"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
                     p.save()
                     if road is None or road_id != road.id:
                         if road is not None:
                             # Add intersection for last point
-                            intersection = find_intersection_from_set(road.p.last())
+                            intersection = find_intersection_from_set(last_p)
                             road.intersection.add(intersection)
                             # Save previous road
                             road.save()
@@ -106,7 +107,12 @@ def create_road_network_from_local_file(request):
                         road.intersection.add(intersection)
                     # Append current point
                     road.p.add(p)
-            # Save the last road
+                    # Remember the last point
+                    last_p = p
+            # Add intersection for last point of last road
+            intersection = find_intersection_from_set(road.p.last())
+            road.intersection.add(intersection)
+            # Save last road
             road.save()
             # Append all intersections
             for intersection in intersections:
