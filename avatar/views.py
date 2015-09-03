@@ -2,12 +2,15 @@ import uuid
 import csv
 from datetime import datetime
 
+from django.db import IntegrityError
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 
 from serializers import *
+from common import *
 
 CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
 
@@ -75,6 +78,19 @@ def create_road_network_from_local_file(request):
         intersections.append(ii)
         return ii
 
+    def close_road(rr):
+        # Add intersection for last point
+        ii = find_intersection_from_set(rr.p.last())
+        try:
+            rr.intersection.add(ii)
+        except IntegrityError:
+            # print "Warning: road " + road.id + " has only one intersection"
+            pass
+        # Calculate road length
+        rr.length = int(Distance.road_length(rr))
+        # Save road
+        rr.save()
+
     if 'src' in request.GET and 'city' in request.GET:
         try:
             city = request.GET["city"]
@@ -83,7 +99,6 @@ def create_road_network_from_local_file(request):
             with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
                 road = None
-                last_p = None
                 line_count = 0
                 for row in reader:
                     print "\rImporting Row: " + str(line_count),
@@ -92,12 +107,9 @@ def create_road_network_from_local_file(request):
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
                     p.save()
                     if road is None or road_id != road.id:
+                        # Close current road if not first road
                         if road is not None:
-                            # Add intersection for last point
-                            intersection = find_intersection_from_set(last_p)
-                            road.intersection.add(intersection)
-                            # Save previous road
-                            road.save()
+                            close_road(road)
                         # Create new road
                         road = Road(id=road_id)
                         road.save()
@@ -107,13 +119,8 @@ def create_road_network_from_local_file(request):
                         road.intersection.add(intersection)
                     # Append current point
                     road.p.add(p)
-                    # Remember the last point
-                    last_p = p
-            # Add intersection for last point of last road
-            intersection = find_intersection_from_set(road.p.last())
-            road.intersection.add(intersection)
-            # Save last road
-            road.save()
+            # Close last road
+            close_road(road)
             # Append all intersections
             for intersection in intersections:
                 road_network.intersections.add(intersection)
