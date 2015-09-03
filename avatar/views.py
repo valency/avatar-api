@@ -85,7 +85,7 @@ def create_road_network_from_local_file(request):
                 road = None
                 linecount = 0
                 for row in reader:
-                    print "\rImporting Row: " + str(linecount) + ","
+                    print "\rImporting Row: " + str(linecount),
                     linecount += 1
                     road_id = city + "-" + row["roadid"] + "-" + row["partid"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
