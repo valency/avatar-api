@@ -83,7 +83,10 @@ def create_road_network_from_local_file(request):
             with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
                 road = None
+                linecount = 0
                 for row in reader:
+                    print '\r Row = {1}, Roads = {2}, Intersections = {3}'.format(linecount, road_network.roads.count(), len(intersections))
+                    linecount += 1
                     road_id = city + "-" + row["roadid"] + "-" + row["partid"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
                     p.save()
