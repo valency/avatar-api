@@ -33,7 +33,10 @@ def add_traj_from_local_file(request):
             traj = None
             with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
+                line_count = 0
                 for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
+                    print "\rImporting Row: " + str(line_count),
+                    line_count += 1
                     if traj is None or row['taxi'] != traj.taxi:
                         if traj is not None:
                             # Save previous trajectory
