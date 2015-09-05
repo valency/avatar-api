@@ -296,6 +296,17 @@ def create_grid_index_by_road_network_id(request):
 
 @api_view(['GET'])
 def get_all_road_network_id(request):
-    return Response({
-        "ids": RoadNetwork.objects.values_list('id', flat=True).order_by('id')
-    })
+    road_networks = []
+    for road_network in RoadNetwork.objects.all():
+        road_networks.append({
+            "id": road_network.id,
+            "city": road_network.city,
+            "grid_lat_count": road_network.grid_lat_count,
+            "grid_lng_count": road_network.grid_lng_count,
+            "pmin": road_network.pmin,
+            "pmax": road_network.pmax,
+            "road_count": road_network.roads.count(),
+            "intersection_count": road_network.intersections.count(),
+            "grid_cell_count": road_network.grid_cells.count()
+        })
+    return Response(road_networks)
