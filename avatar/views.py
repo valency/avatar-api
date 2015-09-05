@@ -161,10 +161,14 @@ def get_traj_by_id(request):
                 "path": traj["path"],
                 "taxi": traj["taxi"]
             }
+            # Prune points
+            point_list = []
             for p in traj["trace"]["p"]:
                 t = datetime.strptime(p["t"], "%Y-%m-%d %H:%M:%S").time()
                 if ts <= t <= td:
-                    pruned["trace"]["p"].append(p)
+                    point_list.append(p)
+            # Sort by time stamp
+            pruned["trace"]["p"] = sorted(point_list, key=lambda k: k['t'])
             return Response(pruned)
         else:
             return Response(traj)
