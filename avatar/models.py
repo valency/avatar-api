@@ -115,8 +115,8 @@ class GridCell(models.Model):
     lng_id = models.IntegerField()
     # Bounding box of the girid cell
     area = models.ForeignKey(Rect)
-    roads = models.ManyToManyField(Road, null=True)
-    intersections = models.ManyToManyField(Intersection, null=True)
+    roads = models.ManyToManyField(Road)
+    intersections = models.ManyToManyField(Intersection)
 
     def __str__(self):
         return "(" + str(self.lat_id) + "," + str(self.lng_id) + ")"
@@ -124,9 +124,9 @@ class GridCell(models.Model):
 
 class RoadNetwork(models.Model):
     city = models.CharField(max_length=32, unique=True)
-    roads = models.ManyToManyField(Road, null=True)
-    intersections = models.ManyToManyField(Intersection, null=True)
-    grid_cells = models.ManyToManyField(GridCell, null=True)
+    roads = models.ManyToManyField(Road)
+    intersections = models.ManyToManyField(Intersection)
+    grid_cells = models.ManyToManyField(GridCell)
     grid_lat_count = models.IntegerField(null=True)
     grid_lng_count = models.IntegerField(null=True)
     pmin = models.ForeignKey(Point, related_name="pmin", null=True)

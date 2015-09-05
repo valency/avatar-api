@@ -243,6 +243,7 @@ def map_matching(request):
 def create_grid_index_by_road_network_id(request):
     if 'id' in request.GET:
         road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        road_network.grid_cells.clear()
         grid_count = 100
         if "grid" in request.GET:
             grid_count = int(request.GET["grid"])
