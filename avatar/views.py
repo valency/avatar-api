@@ -303,8 +303,8 @@ def get_all_road_network_id(request):
             "city": road_network.city,
             "grid_lat_count": road_network.grid_lat_count,
             "grid_lng_count": road_network.grid_lng_count,
-            "pmin": road_network.pmin,
-            "pmax": road_network.pmax,
+            "pmin": PointSerializer(road_network.pmin).data,
+            "pmax": PointSerializer(road_network.pmax).data,
             "road_count": road_network.roads.count(),
             "intersection_count": road_network.intersections.count(),
             "grid_cell_count": road_network.grid_cells.count()
