@@ -7,6 +7,7 @@ from django.db.models import Max, Min
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from rest_framework import viewsets, status
 
 from serializers import *
@@ -256,7 +257,7 @@ def create_grid_index_by_road_network_id(request):
         maxp = Point(lat=lat_max, lng=lng_max)
         maxp.save()
         print "Creating grid in memory..."
-        grid_roads = [i[:] for i in [[] * 10] * 10]
+        grid_roads = [i[:] for i in [[] * grid_count] * grid_count]
         unit_lat = (maxp.lat - minp.lat) / grid_count
         unit_lng = (maxp.lng - minp.lng) / grid_count
         for road in road_network.roads.all():
