@@ -257,7 +257,7 @@ def create_grid_index_by_road_network_id(request):
         maxp = Point(lat=lat_max, lng=lng_max)
         maxp.save()
         print "Creating grid in memory..."
-        grid_roads = [i[:] for i in [[] * grid_count] * grid_count]
+        grid_roads = [[[] for i in range(grid_count)] for j in range(grid_count)]
         unit_lat = (maxp.lat - minp.lat) / grid_count
         unit_lng = (maxp.lng - minp.lng) / grid_count
         for road in road_network.roads.all():
