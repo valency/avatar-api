@@ -66,8 +66,26 @@ class TrajectorySerializer(serializers.ModelSerializer):
         model = Trajectory
 
 
+class RectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rect
+
+
+class GridCellSerializer(serializers.ModelSerializer):
+    area = RectSerializer()
+    roads = RoadSerializer(many=True)
+    intersections = IntersectionSerializer(many=True)
+
+    class Meta:
+        model = GridCell
+
+
 class RoadNetworkSerializer(serializers.ModelSerializer):
-    road = RoadSerializer(many=True)
+    roads = RoadSerializer(many=True)
+    intersections = IntersectionSerializer(many=True)
+    grid_cells = GridCellSerializer(many=True)
+    pmin = PointSerializer()
+    pmax = PointSerializer()
 
     class Meta:
         model = RoadNetwork

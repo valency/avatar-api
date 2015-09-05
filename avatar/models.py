@@ -97,7 +97,7 @@ class Rect(models.Model):
         return "(" + str(self.lat) + "," + str(self.lng) + "," + str(self.height) + "," + str(self.width) + ")"
 
     def contains_road(self, road):
-        for p in road.p:
+        for p in road.p.all():
             if self.contains_road_point(p):
                 return True
         return False
@@ -109,7 +109,28 @@ class Rect(models.Model):
             return False
 
 
+class GridCell(models.Model):
+    # Actual ID of the grid cell (lat count, lng count)
+    lat_id = models.IntegerField()
+    lng_id = models.IntegerField()
+    # Bounding box of the girid cell
+    area = models.ForeignKey(Rect)
+    roads = models.ManyToManyField(Road, null=True)
+    intersections = models.ManyToManyField(Intersection, null=True)
+
+    def __str__(self):
+        return "(" + str(self.lat_id) + "," + str(self.lng_id) + ")"
+
+
 class RoadNetwork(models.Model):
     city = models.CharField(max_length=32, unique=True)
-    roads = models.ManyToManyField(Road)
-    intersections = models.ManyToManyField(Intersection)
+    roads = models.ManyToManyField(Road, null=True)
+    intersections = models.ManyToManyField(Intersection, null=True)
+    grid_cells = models.ManyToManyField(GridCell, null=True)
+    grid_lat_count = models.IntegerField(null=True)
+    grid_lng_count = models.IntegerField(null=True)
+    pmin = models.ForeignKey(Point, related_name="pmin", null=True)
+    pmax = models.ForeignKey(Point, related_name="pmax", null=True)
+
+    def __str__(self):
+        return self.city

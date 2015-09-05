@@ -3,14 +3,15 @@ import csv
 from datetime import datetime
 
 from django.db import IntegrityError
-
+from django.db.models import Max, Min
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from rest_framework import viewsets, status
 
 from serializers import *
-from common import *
+from map_matching.hmm import *
 
 CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
 
@@ -216,5 +217,77 @@ def remove_road_network(request):
             intersection.delete()
         road_network.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def map_matching(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        city = request.GET['city']
+        candidate_rank = 10
+        if 'rank' in request.GET:
+            candidate_rank = int(request.GET['rank'])
+        traj = Trajectory.objects.get(id=request.GET['id'])
+        hmm = HmmMapMatching()
+        hmm_result = hmm.perfom_map_matching(city, traj.trace, candidate_rank)
+        path = hmm_result['path']
+        traj.path = path
+        traj.save()
+        return Response(TrajectorySerializer(traj).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def create_grid_index_by_road_network_id(request):
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        grid_count = 100
+        if "grid" in request.GET:
+            grid_count = int(request.GET["grid"])
+        print "Finding the boundary of the road network..."
+        lat_min = road_network.roads.aggregate(Min("p__lat"))["p__lat__min"]
+        lat_max = road_network.roads.aggregate(Max("p__lat"))["p__lat__max"]
+        lng_min = road_network.roads.aggregate(Min("p__lng"))["p__lng__min"]
+        lng_max = road_network.roads.aggregate(Max("p__lng"))["p__lng__max"]
+        minp = Point(lat=lat_min, lng=lng_min)
+        minp.save()
+        maxp = Point(lat=lat_max, lng=lng_max)
+        maxp.save()
+        print "Creating grid in memory..."
+        grid_roads = [i[:] for i in [[] * 10] * 10]
+        unit_lat = (maxp.lat - minp.lat) / grid_count
+        unit_lng = (maxp.lng - minp.lng) / grid_count
+        for road in road_network.roads.all():
+            for p in road.p.all():
+                i = int((p.lat - minp.lat) / unit_lat)
+                if i > grid_count - 1:
+                    i = grid_count - 1
+                j = int((p.lng - minp.lng) / unit_lng)
+                if j > grid_count - 1:
+                    j = grid_count - 1
+                if road not in grid_roads[i][j]:
+                    grid_roads[i][j].append(road)
+        print "Saving the results..."
+        for i in range(grid_count):
+            for j in range(grid_count):
+                rect = Rect(lat=minp.lat + unit_lat * i, lng=minp.lng + unit_lng * j, width=unit_lng, height=unit_lat)
+                rect.save()
+                grid = GridCell(lat_id=i, lng_id=j, area=rect)
+                grid.save()
+                for road in grid_roads[i][j]:
+                    grid.roads.add(road)
+                grid.save()
+                road_network.grid_cells.add(grid)
+        print "Updating the road network..."
+        road_network.pmax = maxp
+        road_network.pmin = minp
+        road_network.grid_lat_count = grid_count
+        road_network.grid_lng_count = grid_count
+        road_network.save()
+        return Response({
+            "grid_cell_count": grid_count
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
