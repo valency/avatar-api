@@ -7,11 +7,10 @@ from django.db.models import Max, Min
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from rest_framework import viewsets, status
 
 from serializers import *
-from map_matching.hmm import *
+from geometry import *
 
 CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
 
@@ -217,24 +216,6 @@ def remove_road_network(request):
             intersection.delete()
         road_network.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def map_matching(request):
-    if 'city' in request.GET and 'id' in request.GET:
-        city = request.GET['city']
-        candidate_rank = 10
-        if 'rank' in request.GET:
-            candidate_rank = int(request.GET['rank'])
-        traj = Trajectory.objects.get(id=request.GET['id'])
-        hmm = HmmMapMatching()
-        hmm_result = hmm.perfom_map_matching(city, traj.trace, candidate_rank)
-        path = hmm_result['path']
-        traj.path = path
-        traj.save()
-        return Response(TrajectorySerializer(traj).data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

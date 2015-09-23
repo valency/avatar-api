@@ -17,8 +17,11 @@ INSTALLED_APPS = (
     'corsheaders',
     'rest_framework',
     'mptt',
-    'avatar'
+    'avatar',
+    'avatar_core',
+    'avatar_map_matching'
 )
+
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -29,7 +32,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
-ROOT_URLCONF = 'api.urls'
+
+ROOT_URLCONF = 'avatar.urls'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -45,7 +50,9 @@ TEMPLATES = [
         },
     },
 ]
-WSGI_APPLICATION = 'api.wsgi.application'
+
+WSGI_APPLICATION = 'avatar.wsgi.application'
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [],
@@ -55,7 +62,9 @@ REST_FRAMEWORK = {
     ),
     'PAGE_SIZE': 10
 }
+
 CORS_ORIGIN_ALLOW_ALL = True
+
 CORS_ORIGIN_WHITELIST = ()
 
 # Database
@@ -66,7 +75,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'template1',
         'USER': 'postgres',
-        'PASSWORD': 'avatar',
+        'PASSWORD': '33b5dadd-c299-4f1c-92ab-e18d02a5a2e2',
         'HOST': 'localhost',
         'PORT': '5432',
     }

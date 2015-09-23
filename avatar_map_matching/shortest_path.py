@@ -1,6 +1,6 @@
 import Queue
 
-from avatar.common import *
+from avatar_core.geometry import *
 
 
 class ShortestPath:
@@ -11,14 +11,14 @@ class ShortestPath:
     # route distance between two points that are both on the road network
     def shortest_path_angle(p1, road1, p2, road2):
         if road1.id == road2.id:
-            #	    print 'p1 and p2 are in the same road...'
+            # print 'p1 and p2 are in the same road...'
             return abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p2, road2))
             # should use shortest path algorithm
         p_cross = Distance.check_intersection(road1, road2)
         if p_cross is not None:
             p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross, road1))
             p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross, road2))
-            #	    print 'road1 and road2 have intersection...'
+            # print 'road1 and road2 have intersection...'
             return p1_cross + p2_cross
         else:
             p1_set = road1.p.all()
@@ -35,7 +35,7 @@ class ShortestPath:
             else:
                 p2_cross = Distance.earth_dist(p2, p2_set[len(p2_set) - 1])
                 cross2 = p2_set[len(p2_set) - 1]
-            #	    print 'road1 and road2 have no intersection...'
+            # print 'road1 and road2 have no intersection...'
             return p1_cross + p2_cross + Distance.earth_dist(cross1, cross2)
 
     # @staticmethod
@@ -46,7 +46,7 @@ class ShortestPath:
 
     @staticmethod
     def shortest_path_dijkstra(p1, road1, p2, road2):
-        #	print road1.id == road2.id
+        # print road1.id == road2.id
         if road1.id == road2.id:
             dis = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p2, road2))
             return (dis, [[road1.id], [None]])
@@ -54,7 +54,7 @@ class ShortestPath:
         if p_cross is not None:
             p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross.p, road1))
             p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross.p, road2))
-            #	    print 'road1 and road2 have intersection...'
+            # print 'road1 and road2 have intersection...'
             return (p1_cross + p2_cross, [[road1.id, road2.id], [p_cross.id]])
         else:
             path = Queue.PriorityQueue()
@@ -69,7 +69,7 @@ class ShortestPath:
             while path.qsize() > 0:
                 print path.qsize()
                 shortest = path.get()
-                #		print shortest[1][0]
+                # print shortest[1][0]
                 rids = shortest[1][0]
                 intersecids = shortest[1][1]
                 last_road = Road.objects.get(id=rids[len(rids) - 1])
@@ -93,7 +93,7 @@ class ShortestPath:
                                     newdist = shortest[0] + road.length
                                     newpath = (newdist, [newrids, newintersecids])
                                     path.put(newpath)
-                                #				    print newpath[1][0]
+                                    # print newpath[1][0]
         return None
 
     @staticmethod
@@ -106,7 +106,7 @@ class ShortestPath:
         came_from[intersec1.id] = None
         cost_so_far[intersec1.id] = 0.0
         while frontier.qsize() > 0:
-            #	    print frontier.qsize()
+            # print frontier.qsize()
             current = frontier.get()
             if current[1][0] == intersec2.id:
                 break
@@ -146,7 +146,7 @@ class ShortestPath:
         if p_cross is not None:
             p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross.p, road1))
             p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross.p, road2))
-            #           print 'road1 and road2 have intersection...'
+            # print 'road1 and road2 have intersection...'
             return (p1_cross + p2_cross, [road2.id, road1.id])
         else:
             dis_between_sec = 16777215.0

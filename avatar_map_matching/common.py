@@ -1,4 +1,4 @@
-from avatar.common import *
+from avatar_core.geometry import *
 
 
 def find_candidates_from_road(road_network, point):

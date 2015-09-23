@@ -1,4 +1,5 @@
 from common import *
+from avatar_core.geometry import *
 
 
 class HmmMapMatching:
