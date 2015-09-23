@@ -1,9 +1,18 @@
+from __future__ import absolute_import
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '#p94vjet9clpl+iy6u#m$^lirp9vb3r9s_#*ho$2!+9g@ly=qy'
 DEBUG = True
 ALLOWED_HOSTS = []
+
+# Celery settings
+
+BROKER_URL = 'django://'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 # Application definition
 
@@ -16,6 +25,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'kombu.transport.django',
+    'djcelery',
     'mptt',
     'avatar',
     'avatar_core',

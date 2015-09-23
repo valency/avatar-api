@@ -17,5 +17,7 @@ urlpatterns = [
     url(r'road_network/create/$', views.create_road_network_from_local_file),
     url(r'road_network/get_all/$', views.get_all_road_network_id),
     url(r'road_network/remove/$', views.remove_road_network),
-    url(r'road_network/grid/create/$', views.create_grid_index_by_road_network_id)
+    url(r'road_network/grid/create/$', views.create_grid_index_by_road_network_id),
+    url(r'demo/$', views.demo),
+    url(r'demo/result/$', views.demo_result)
 ]

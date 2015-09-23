@@ -3,11 +3,17 @@ import csv
 from datetime import datetime
 
 from django.db import IntegrityError
+
 from django.db.models import Max, Min
+
 from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from rest_framework import viewsets, status
+
+from celery.result import AsyncResult
 
 from serializers import *
 from geometry import *
@@ -23,6 +29,25 @@ class TrajectoryViewSet(viewsets.ModelViewSet):
 class RoadViewSet(viewsets.ModelViewSet):
     queryset = Road.objects.all()
     serializer_class = RoadSerializer
+
+
+@api_view(['GET'])
+def demo_result(request):
+    if 'id' in request.GET:
+        result = AsyncResult(request.GET["id"])
+        if result.ready():
+            return Response({"status": result.ready(), "result": result.get()})
+        else:
+            return Response({"status": result.ready()})
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def demo(request):
+    from tasks import heavy_task
+    task = heavy_task.delay()
+    return Response({"task_id": task.task_id})
 
 
 @api_view(['GET'])
