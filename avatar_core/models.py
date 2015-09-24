@@ -51,6 +51,15 @@ class Road(models.Model):
     def __str__(self):
         return self.id
 
+    def point_location(self, p):
+        all_p = self.p.all()
+        for i in range(len(all_p) - 1):
+            p1 = all_p[i]
+            p2 = all_p[i + 1]
+            if min(p1.lat, p2.lat) <= p.lat <= max(p1.lat, p2.lat) or min(p1.lng, p2.lng) <= p.lng <= max(p1.lng, p2.lng):
+                return i
+        return None
+
 
 class Trace(models.Model):
     id = models.CharField(max_length=36, primary_key=True)
@@ -108,6 +117,17 @@ class Rect(models.Model):
             return False
 
 
+class ShortestPathIndex(models.Model):
+    # start.id < end.id
+    start = models.ForeignKey(Intersection, related_name="start")
+    end = models.ForeignKey(Intersection, related_name="end")
+    path = models.ForeignKey(Path)
+    length = models.IntegerField(null=True)
+
+    def __str__(self):
+        return str(self.length)
+
+
 class GridCell(models.Model):
     # Actual ID of the grid cell (lat count, lng count)
     lat_id = models.IntegerField()
@@ -130,6 +150,7 @@ class RoadNetwork(models.Model):
     grid_lng_count = models.IntegerField(null=True)
     pmin = models.ForeignKey(Point, related_name="pmin", null=True)
     pmax = models.ForeignKey(Point, related_name="pmax", null=True)
+    shortest_path_index = models.ManyToManyField(ShortestPathIndex)
 
     def __str__(self):
         return self.city

@@ -10,7 +10,7 @@ from hmm import *
 @api_view(['GET'])
 def map_matching(request):
     if 'city' in request.GET and 'id' in request.GET:
-        city = request.GET['city']
+        city = RoadNetwork.objects.get(id=request.GET['city'])
         candidate_rank = 10
         if 'rank' in request.GET:
             candidate_rank = int(request.GET['rank'])

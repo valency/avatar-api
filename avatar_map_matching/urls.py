@@ -7,5 +7,5 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     url(r'', include(router.urls)),
-    url(r'map_matching/$', views.map_matching)
+    url(r'perform/$', views.map_matching)
 ]
