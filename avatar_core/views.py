@@ -226,9 +226,9 @@ def get_all_traj_id(request):
 
 @api_view(['GET'])
 def remove_road_network(request):
-    if 'city' in request.GET:
+    if 'id' in request.GET:
         try:
-            road_network = RoadNetwork.objects.get(city=request.GET['city'])
+            road_network = RoadNetwork.objects.get(id=request.GET['id'])
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         # Delete all intersections associated with the road network
