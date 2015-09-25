@@ -4,6 +4,7 @@ import uuid
 from django.core.exceptions import ObjectDoesNotExist
 
 from avatar_core.geometry import *
+from models import *
 
 
 class ShortestPath:
@@ -128,6 +129,10 @@ class ShortestPath:
                         next_move = (priority, [nextsec.id], [road.id])
                         frontier.put(next_move)
                         came_from[nextsec.id] = [current[1][0], road.id]
+                else:
+                    priority = 16777215  # Infinity
+                    next_move = (priority, [], [road.id])
+                    frontier.put(next_move)
         path = []
         pathlen = 0.0
         prev_sec = sec2.id
@@ -143,11 +148,10 @@ class ShortestPath:
 
     @staticmethod
     def check_shortest_path_from_db(road_network, sec1, sec2):
+        start_sec = sec1 if sec1.id < sec2.id else sec2
+        end_sec = sec2 if sec1.id < sec2.id else sec1
         try:
-            if sec1.id < sec2.id:
-                index = road_network.shortest_path_index.get(start=sec1, end=sec2)
-            else:
-                index = road_network.shortest_path_index.get(start=sec2, end=sec1)
+            index = ShortestPathIndex.objects.get(city=road_network, start=start_sec, end=end_sec)
         except ObjectDoesNotExist:
             print "Adding shortest path index of intersection " + str(sec1.id) + " and intersection " + str(sec2.id)
             shortest_path = ShortestPath.shortest_path_astar_intersections(road_network, sec1, sec2)
@@ -162,12 +166,8 @@ class ShortestPath:
                 path_fragment.save()
                 path.road.add(path_fragment)
             path.save()
-            if sec1.id < sec2.id:
-                index = ShortestPathIndex(start=sec1, end=sec2, path=path, length=shortest_path[0])
-            else:
-                index = ShortestPathIndex(start=sec2, end=sec1, path=path, length=shortest_path[0])
+            index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=shortest_path[0])
             index.save()
-            road_network.shortest_path_index.add(index)
         rids = []
         for segment in index.path.road.all():
             rids.append(segment.road.id)

@@ -117,17 +117,6 @@ class Rect(models.Model):
             return False
 
 
-class ShortestPathIndex(models.Model):
-    # start.id < end.id
-    start = models.ForeignKey(Intersection, related_name="start")
-    end = models.ForeignKey(Intersection, related_name="end")
-    path = models.ForeignKey(Path)
-    length = models.IntegerField(null=True)
-
-    def __str__(self):
-        return str(self.length)
-
-
 class GridCell(models.Model):
     # Actual ID of the grid cell (lat count, lng count)
     lat_id = models.IntegerField()
@@ -150,7 +139,6 @@ class RoadNetwork(models.Model):
     grid_lng_count = models.IntegerField(null=True)
     pmin = models.ForeignKey(Point, related_name="pmin", null=True)
     pmax = models.ForeignKey(Point, related_name="pmax", null=True)
-    shortest_path_index = models.ManyToManyField(ShortestPathIndex)
 
     def __str__(self):
         return self.city
