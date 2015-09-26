@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'', include(router.urls)),
     url(r'traj/import/$', views.add_traj_from_local_file),
     url(r'traj/get/$', views.get_traj_by_id),
+    url(r'traj/truncate/$', views.truncate_traj),
     url(r'traj/remove/$', views.remove_traj_by_id),
     url(r'traj/remove_all/$', views.remove_all_traj),
     url(r'traj/get_all/$', views.get_all_traj_id),

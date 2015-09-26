@@ -3,14 +3,10 @@ import csv
 from datetime import datetime
 
 from django.db import IntegrityError
-
 from django.db.models import Max, Min
-
 from django.core.exceptions import ObjectDoesNotExist
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from rest_framework import viewsets, status
 
 from celery.result import AsyncResult
@@ -197,6 +193,35 @@ def get_traj_by_id(request):
             return Response(pruned)
         else:
             return Response(traj)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def truncate_traj(request):
+    if 'id' in request.GET:
+        try:
+            traj = Trajectory.objects.get(id=request.GET['id'])
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if "ts" in request.GET and "td" in request.GET:
+            ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
+            td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
+            # Create new trace
+            uuid_id = str(uuid.uuid4())
+            trace = Trace(id=uuid_id)
+            trace.save()
+            for sample in traj.trace.p.all():
+                t = sample.t.time()
+                if ts <= t <= td:
+                    trace.p.add(sample)
+            trace.save()
+            # Create new trajectory
+            truncated = Trajectory(id=uuid_id, taxi=traj.taxi, trace=trace)
+            truncated.save()
+            return Response(TrajectorySerializer(truncated).data)
+        else:
+            return Response(TrajectorySerializer(traj).data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
