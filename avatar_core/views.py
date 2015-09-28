@@ -163,6 +163,29 @@ def create_road_network_from_local_file(request):
 
 
 @api_view(['GET'])
+def clear_orphan(request):
+    if 'id' in request.GET:
+        try:
+            road_network = RoadNetwork.objects.get(id=request.GET["id"])
+            removed_count = 0
+            for road in road_network.roads.all():
+                flag = False
+                for intersection in road.intersection.all():
+                    if road_network.roads.filter(intersection__id__contains=intersection.id).count() >= 2:
+                        flag = True
+                        break
+                if not flag:
+                    removed_count += 1
+                    road_network.roads.remove(road)
+                    print "Road: " + str(road.id) + " is removed."
+            return Response({"removed": removed_count})
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
 def get_traj_by_id(request):
     if 'id' in request.GET:
         try:
