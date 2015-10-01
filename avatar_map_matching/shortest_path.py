@@ -195,6 +195,7 @@ class ShortestPath:
             for i in range(len(intersec1)):
                 for j in range(len(intersec2)):
                     if Distance.earth_dist(intersec1[i].p, intersec2[j].p) < dis_between_sec:
+                        dis_between_sec = Distance.earth_dist(intersec1[i].p, intersec2[j].p)
                         id1 = i
                         id2 = j
             path = ShortestPath.check_shortest_path_from_db(road_network, intersec1[id1], intersec2[id2])

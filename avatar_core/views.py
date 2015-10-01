@@ -8,7 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
-
 from celery.result import AsyncResult
 
 from serializers import *
@@ -270,6 +269,18 @@ def get_all_traj_id(request):
     return Response({
         "ids": Trajectory.objects.values_list('id', flat=True).order_by('id')
     })
+
+
+@api_view(['GET'])
+def get_road_by_id(request):
+    if 'id' in request.GET:
+        try:
+            road = Road.objects.get(id=request.GET['id'])
+            return Response(RoadSerializer(road).data)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

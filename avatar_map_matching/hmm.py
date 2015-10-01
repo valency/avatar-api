@@ -20,7 +20,7 @@ class HmmMapMatching:
         betas = []
         prev_p = None
         prev_candidates = None
-        prev_road = None
+        #        prev_road = None
         rank = int(rank)
         print "Setting HMM parameters..."
         count = 0
@@ -51,9 +51,10 @@ class HmmMapMatching:
                     for pc in range(rank):
                         current_road = road_network.roads.get(id=candidates[c]["rid"])
                         prev_road = road_network.roads.get(id=prev_candidates[pc]["rid"])
-                        route = ShortestPath.shortest_path_astar(road_network, candidates[c]["mapped"], current_road, prev_candidates[pc]["mapped"], prev_road)
+                        #                        route = ShortestPath.shortest_path_astar(road_network, candidates[c]["mapped"], current_road, prev_candidates[pc]["mapped"], prev_road)
+                        route = ShortestPath.shortest_path_astar(road_network, prev_candidates[pc]["mapped"], prev_road, candidates[c]["mapped"], current_road)
                         dist_pc = abs(Distance.earth_dist(p.p, prev_p) - route[0])
-                        dist_pc = abs(Distance.earth_dist(p.p, prev_p))
+                        #                        dist_pc = abs(Distance.earth_dist(p.p, prev_p))
                         tran_diff.append(dist_pc)
                         tran_route.append(route[1])
                     tran_p.append(tran_diff)
@@ -64,13 +65,12 @@ class HmmMapMatching:
                 prev_road = road_network.roads.get(id=prev_candidates[0]["rid"])
                 beta_route = ShortestPath.shortest_path_astar(road_network, candidates[0]["mapped"], nearest_road, prev_candidates[0]["mapped"], prev_road)
                 beta_p = abs(Distance.earth_dist(p.p, prev_p) - beta_route[0])
-                beta_p = abs(Distance.earth_dist(p.p, prev_p))
+                #		print str(p.p.lat) + "," + str(p.p.lng) + ";" + str(prev_p.lat) + "," + str(prev_p.lng)
+                #                beta_p = abs(Distance.earth_dist(p.p, prev_p))
                 betas.append(beta_p)
             prev_p = p.p
             prev_candidates = candidates
-            prev_road = nearest_road
-        # print deltas
-        #        print betas
+        #            prev_road = nearest_road
         print "Calculating delta and beta..."
         deltas.sort()
         betas.sort()
@@ -91,6 +91,7 @@ class HmmMapMatching:
                 prob_t.append(emission_para * math.exp(exponent))
             self.emission_prob.append(prob_t)
         print "Calculating transition probabilities..."
+        print len(self.transition_prob)
         for zt in self.transition_dist:
             prob_dt = []
             for prev_xi in zt:
@@ -100,6 +101,7 @@ class HmmMapMatching:
                     prob_x.append(transition_para * math.exp(exponent))
                 prob_dt.append(prob_x)
             self.transition_prob.append(prob_dt)
+        print len(self.transition_prob)
 
     def hmm_viterbi_forward(self):
         chosen_index = []
@@ -131,6 +133,10 @@ class HmmMapMatching:
             chosen_index.append(prev_index)
             self.map_matching_prob.append(state_prob)
             self.brute_force_prob.append(connect_prob)
+        #	print len(self.transition_dist)
+        #	print len(self.transition_prob)
+        #	print len(self.transition_route)
+        #	print len(chosen_index)
         return chosen_index
 
     def hmm_viterbi_backward(self, chosen_index):
@@ -147,44 +153,53 @@ class HmmMapMatching:
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
+        print len(chosen_index)
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             # print len(self.candidate_rid)
             # print len(self.candidate_rid[i-1])
-            print i - 1
             print prev_index
             connect_route = self.transition_route[i - 1][current_index][prev_index]
+            print self.transition_route[i - 1][current_index]
             prev_rid = self.candidate_rid[i - 1][prev_index]
-            # print prev_rid
+            print prev_rid
             # print p_c_route
             hmm_path_index.append(prev_index)
             hmm_path_rids.append(prev_rid)
             connect_routes.append(connect_route)
+            current_index = prev_index
         # print len(hmm_path_rids)
         hmm_path_rids.reverse()
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes]
 
     def perfom_map_matching(self, road_network, trace, rank):
+        print len(self.transition_prob)
         self.hmm_prob_model(road_network, trace, rank)
         print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
+        print len(self.transition_prob)
         sequence = self.hmm_viterbi_backward(chosen_index)
         hmm_path = Path(id=trace.id)
+        for prev_fragment in hmm_path.road.all():
+            hmm_path.road.remove(prev_fragment)
         hmm_path.save()
-        path_fragment = None
+        ini_road = road_network.roads.get(id=sequence[0][0])
+        path_fragment = PathFragment(road=ini_road)
+        path_fragment.save()
         p_index = []
+        print sequence[0]
         for i in range(0, len(sequence[0])):
             if i > 0:
-                print sequence[0][i] == sequence[1][i - 1][0]
+                print sequence[1][i - 1]
+                print sequence[0][i] == sequence[1][i - 1][-1]
             if i > 0 and len(sequence[1][i - 1]) > 1:
-                if path_fragment is not None:
-                    path_fragment.p = ','.join(map(str, p_index))
-                    path_fragment.save()
-                    hmm_path.road.add(path_fragment)
-                    p_index = []
+                path_fragment.p = ','.join(map(str, p_index))
+                path_fragment.save()
+                hmm_path.road.add(path_fragment)
+                p_index = []
                 if len(sequence[1][i - 1]) > 2:
-                    for j in range(len(sequence[1][i - 1]) - 2, 0, -1):
+                    for j in range(1, len(sequence[1][i - 1]) - 1):
                         next_road = road_network.roads.get(id=sequence[1][i - 1][j])
                         path_fragment = PathFragment(road=next_road)
                         path_fragment.save()
@@ -194,52 +209,61 @@ class HmmMapMatching:
                 path_fragment.save()
                 prev_id = sequence[0][i]
             p_index.append(i)
+        path_fragment.p = ','.join(map(str, p_index))
+        path_fragment.save()
+        hmm_path.road.add(path_fragment)
         hmm_path.save()
+        for fragment in hmm_path.road.all():
+            print fragment.p
+            for sec in fragment.road.intersection.all():
+                print sec.id
         return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
 
-    def reperform_map_matching(self, road_network, trace, prob, rank, diff):
-        print "Combining user's preference..."
-        # Assuming the structure of diff is: [[point_index_from_trace, road_id], [...], ...]
-        self.map_matching_prob = prob
-        for chosen in diff:
-            p = trace.p.all()[chosen[0]]
-            candidates = find_candidates_from_road(road_network, p.p)
-            for c in range(0, len(candidates)):
-                if candidates[c]["rid"] == chosen[1]:
-                    if c >= rank:
-                        print "The chosen road mapped to point " + str(chosen[0]) + " is not in the top " + str(rank) + " candidates!"
-                    else:
-                        for i in range(rank):
-                            if i == c:
-                                self.map_matching_prob[chosen[0]][c] = 1.0
-                            else:
-                                self.map_matching_prob[chosen[0]][c] = 0.0
-                break
-        print "Implementing viterbi algorithm..."
-        sequence = self.hmm_viterbi_backward([])
-        hmm_path = Path(id=trace.id)
-        hmm_path.save()
-        path_fragment = None
-        p_index = []
-        for i in range(0, len(sequence[0])):
-            if i > 0:
-                print sequence[0][i] == sequence[1][i - 1][0]
-            if i > 0 and len(sequence[1][i - 1]) > 1:
-                if path_fragment is not None:
-                    path_fragment.p = ','.join(map(str, p_index))
-                    path_fragment.save()
-                    hmm_path.road.add(path_fragment)
-                    p_index = []
-                if len(sequence[1][i - 1]) > 2:
-                    for j in range(len(sequence[1][i - 1]) - 2, 0, -1):
-                        next_road = road_network.roads.get(id=sequence[1][i - 1][j])
-                        path_fragment = PathFragment(road=next_road)
-                        path_fragment.save()
-                        hmm_path.road.add(path_fragment)
-                next_road = road_network.roads.get(id=sequence[0][i])
-                path_fragment = PathFragment(road=next_road)
-                path_fragment.save()
-                prev_id = sequence[0][i]
-            p_index.append(i)
-        hmm_path.save()
-        return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
+# def reperform_map_matching(self, road_network, trace, prob, rank, diff):
+#        print "Combining user's preference..."
+#        # Assuming the structure of diff is: [[point_index_from_trace, road_id], [...], ...]
+#        self.map_matching_prob = prob
+#        for chosen in diff:
+#            p = trace.p.all()[chosen[0]]
+#            candidates = find_candidates_from_road(road_network, p.p)
+#            for c in range(0, len(candidates)):
+#                if candidates[c]["rid"] == chosen[1]:
+#                    if c >= rank:
+#                        print "The chosen road mapped to point " + str(chosen[0]) + " is not in the top " + str(rank) + " candidates!"
+#                    else:
+#                        for i in range(rank):
+#                            if i == c:
+#                                self.map_matching_prob[chosen[0]][c] = 1.0
+#                            else:
+#                                self.map_matching_prob[chosen[0]][c] = 0.0
+#                break
+#        print "Implementing viterbi algorithm..."
+#        sequence = self.hmm_viterbi_backward([])
+#        hmm_path = Path(id=trace.id)
+#        hmm_path.save()
+#        path_fragment = None
+#        p_index = []
+#	print sequence[0]
+#        for i in range(0, len(sequence[0])):
+#	    print sequence[1][i]
+#            if i > 0:
+#                print sequence[0][i] == sequence[1][i - 1][0]
+#            if i > 0 and len(sequence[1][i - 1]) > 1:
+#                if path_fragment is not None:
+#                    path_fragment.p = ','.join(map(str, p_index))
+#                    path_fragment.save()
+#                    hmm_path.road.add(path_fragment)
+#                    p_index = []
+#                if len(sequence[1][i - 1]) > 2:
+#                    for j in range(1, len(sequence[1][i - 1]) - 1):
+#                        next_road = road_network.roads.get(id=sequence[1][i - 1][j])
+#                        path_fragment = PathFragment(road=next_road)
+#                        path_fragment.save()
+#                        hmm_path.road.add(path_fragment)
+#                next_road = road_network.roads.get(id=sequence[0][i])
+#                path_fragment = PathFragment(road=next_road)
+#                path_fragment.save()
+#                prev_id = sequence[0][i]
+#            p_index.append(i)
+#        hmm_path.save()
+#        return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}

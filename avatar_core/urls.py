@@ -15,6 +15,7 @@ urlpatterns = [
     url(r'traj/remove/$', views.remove_traj_by_id),
     url(r'traj/remove_all/$', views.remove_all_traj),
     url(r'traj/get_all/$', views.get_all_traj_id),
+    url(r'road/get/$', views.get_road_by_id),
     url(r'road_network/create/$', views.create_road_network_from_local_file),
     url(r'road_network/get_all/$', views.get_all_road_network_id),
     url(r'road_network/remove/$', views.remove_road_network),
