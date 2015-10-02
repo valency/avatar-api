@@ -23,7 +23,8 @@ class HmmMapMatching:
         print "Setting HMM parameters..."
         print "Before setting HMM parameters: size of transition_prob is " + str(len(self.transition_prob))
         count = 0
-        for p in trace.p.all():
+        for p in trace.p.all().order_by("t"):
+            print p.id
             # find all candidate points of each point
             candidates = find_candidates_from_road(road_network, p.p)
             # save the emission distance and rid of each candidates
@@ -39,7 +40,7 @@ class HmmMapMatching:
             nearest_road = road_network.roads.get(id=candidates[0]["rid"])
             deltas.append(candidates[0]["dist"])
             # save the transition distance between each two points
-            print "\rSaving transition distance between sample: " + str(count) + " and previous sample",
+            print "Saving transition distance between sample: " + str(count) + " and previous sample"
             count += 1
             if prev_p is not None:
                 tran_p = []

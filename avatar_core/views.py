@@ -214,6 +214,8 @@ def get_traj_by_id(request):
             pruned["trace"]["p"] = sorted(point_list, key=lambda k: k['t'])
             return Response(pruned)
         else:
+            # Sort by time stamp
+            traj["trace"]["p"] = sorted(traj["trace"]["p"], key=lambda k: k['t'])
             return Response(traj)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -233,7 +235,7 @@ def truncate_traj(request):
             uuid_id = str(uuid.uuid4())
             trace = Trace(id=uuid_id)
             trace.save()
-            for sample in traj.trace.p.all():
+            for sample in traj.trace.p.all().order_by("t"):
                 t = sample.t.time()
                 if ts <= t <= td:
                     trace.p.add(sample)
