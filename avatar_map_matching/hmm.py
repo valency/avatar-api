@@ -3,17 +3,16 @@ from shortest_path import *
 
 
 class HmmMapMatching:
-    candidate_rid = []
-    emission_dist = []
-    transition_dist = []
-    transition_route = []
-    emission_prob = []
-    transition_prob = []
-    map_matching_prob = []
-    brute_force_prob = []
 
     def __init__(self):
-        pass
+        self.candidate_rid = []
+        self.emission_dist = []
+        self.transition_dist = []
+        self.transition_route = []
+        self.emission_prob = []
+        self.transition_prob = []
+        self.map_matching_prob = []
+        self.brute_force_prob = []
 
     def hmm_parameters(self, road_network, trace, rank):
         deltas = []
@@ -23,6 +22,7 @@ class HmmMapMatching:
         #        prev_road = None
         rank = int(rank)
         print "Setting HMM parameters..."
+        print "Before setting HMM parameters: size of transition_prob is " + str(len(self.transition_prob))
         count = 0
         for p in trace.p.all():
             # find all candidate points of each point
@@ -71,6 +71,7 @@ class HmmMapMatching:
             prev_p = p.p
             prev_candidates = candidates
         #            prev_road = nearest_road
+	print "After setting HMM parameters: size of transition_prob is " + str(len(self.transition_prob))
         print "Calculating delta and beta..."
         deltas.sort()
         betas.sort()
@@ -91,7 +92,8 @@ class HmmMapMatching:
                 prob_t.append(emission_para * math.exp(exponent))
             self.emission_prob.append(prob_t)
         print "Calculating transition probabilities..."
-        print len(self.transition_prob)
+        print "Before calculating HMM model: size of transition_prob is " + str(len(self.transition_prob))
+	print "Size of transition_dist is " + str(len(self.transition_dist))
         for zt in self.transition_dist:
             prob_dt = []
             for prev_xi in zt:
@@ -101,7 +103,7 @@ class HmmMapMatching:
                     prob_x.append(transition_para * math.exp(exponent))
                 prob_dt.append(prob_x)
             self.transition_prob.append(prob_dt)
-        print len(self.transition_prob)
+        print "After calculating HMM model: size of transition_prob is " + str(len(self.transition_prob))
 
     def hmm_viterbi_forward(self):
         chosen_index = []
@@ -153,7 +155,7 @@ class HmmMapMatching:
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
-        print len(chosen_index)
+        print "After viterbi forward: size of chosen_index is " + str(len(chosen_index))
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             # print len(self.candidate_rid)
@@ -174,11 +176,11 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes]
 
     def perfom_map_matching(self, road_network, trace, rank):
-        print len(self.transition_prob)
+        print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
         self.hmm_prob_model(road_network, trace, rank)
         print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
-        print len(self.transition_prob)
+        print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
         sequence = self.hmm_viterbi_backward(chosen_index)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():
