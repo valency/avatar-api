@@ -1,5 +1,28 @@
-from common import *
 from shortest_path import *
+
+
+def find_candidates_from_road(road_network, point):
+    candidates = []
+    rids = []
+    unit_lat = (road_network.pmax.lat - road_network.pmin.lat) / road_network.grid_lat_count
+    unit_lng = (road_network.pmax.lng - road_network.pmin.lng) / road_network.grid_lng_count
+    if point.lat < road_network.pmin.lat or point.lng < road_network.pmin.lng or point.lat > road_network.pmax.lat or point.lng > road_network.pmax.lng:
+        print "Warning: point out of bound:", point, road_network.pmin, road_network.pmax
+    else:
+        lat_index = int((point.lat - road_network.pmin.lat) / unit_lat)
+        lng_index = int((point.lng - road_network.pmin.lng) / unit_lng)
+        for i in range(lat_index - 1 if lat_index > 0 else 0, lat_index + 2 if lat_index + 1 < road_network.grid_lat_count else road_network.grid_lat_count):
+            for j in range(lng_index - 1 if lng_index > 0 else 0, lng_index + 2 if lng_index + 1 < road_network.grid_lng_count else road_network.grid_lng_count):
+                grid = road_network.grid_cells.get(lat_id=i, lng_id=j)
+                for road in grid.roads.all():
+                    candidate = Distance.point_map_to_road(point, road)
+                    candidate["rid"] = road.id
+                    if road.id not in rids:
+                        candidates.append(candidate)
+                        rids.append(road.id)
+        candidates.sort(key=lambda x: x["dist"])
+    print "# of Candidates = " + str(len(candidates))
+    return candidates
 
 
 class HmmMapMatching:
@@ -28,7 +51,15 @@ class HmmMapMatching:
             # find all candidate points of each point
             candidates = find_candidates_from_road(road_network, p.p)
             # save the emission distance and rid of each candidates
-            print "\rSaving emission distance of sample: " + str(count)
+            print "Saving emission distance of sample: " + str(count)
+            if len(candidates) < rank:
+                print "# of candidates is less than rank = " + str(rank) + ", now add dummy values"
+                for i in range(len(candidates), rank, 1):
+                    candidates.append({
+                        "dist": 16777215.0,
+                        "rid": None,
+                        "mapped": None
+                    })
             dist_p = []
             rids_p = []
             for c in range(rank):
@@ -49,12 +80,16 @@ class HmmMapMatching:
                     tran_diff = []
                     tran_route = []
                     for pc in range(rank):
-                        current_road = road_network.roads.get(id=candidates[c]["rid"])
-                        prev_road = road_network.roads.get(id=prev_candidates[pc]["rid"])
-                        #                        route = ShortestPath.shortest_path_astar(road_network, candidates[c]["mapped"], current_road, prev_candidates[pc]["mapped"], prev_road)
-                        route = ShortestPath.shortest_path_astar(road_network, prev_candidates[pc]["mapped"], prev_road, candidates[c]["mapped"], current_road)
-                        dist_pc = abs(Distance.earth_dist(p.p, prev_p) - route[0])
-                        #                        dist_pc = abs(Distance.earth_dist(p.p, prev_p))
+                        if candidates[c]["rid"] is not None and prev_candidates[pc]["rid"] is not None:
+                            current_road = road_network.roads.get(id=candidates[c]["rid"])
+                            prev_road = road_network.roads.get(id=prev_candidates[pc]["rid"])
+                            #  route = ShortestPath.shortest_path_astar(road_network, candidates[c]["mapped"], current_road, prev_candidates[pc]["mapped"], prev_road)
+                            route = ShortestPath.shortest_path_astar(road_network, prev_candidates[pc]["mapped"], prev_road, candidates[c]["mapped"], current_road)
+                            dist_pc = abs(Distance.earth_dist(p.p, prev_p) - route[0])
+                            #  dist_pc = abs(Distance.earth_dist(p.p, prev_p))
+                        else:
+                            dist_pc = 16777215.0
+                            route = [[], []]
                         tran_diff.append(dist_pc)
                         tran_route.append(route[1])
                     tran_p.append(tran_diff)
@@ -104,6 +139,7 @@ class HmmMapMatching:
                 prob_dt.append(prob_x)
             self.transition_prob.append(prob_dt)
         print "After calculating HMM model: size of transition_prob is " + str(len(self.transition_prob))
+        return para['beta']
 
     def hmm_viterbi_forward(self):
         chosen_index = []
@@ -175,9 +211,113 @@ class HmmMapMatching:
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes]
 
-    def perfom_map_matching(self, road_network, trace, rank):
+    def hmm_with_label(self, road_network, trace, rank, p_index, rid, beta):
+        p_list = trace.p.all()
+        candidate_map = []
+        chosen_index = []
+        ini_prob = []
+        # Find the index of the candidate road for the query sample
+        r_index = 16777215
+        for i in range(len(p_list)):
+            candidates = find_candidates_from_road(road_network, p_list[i].p)
+            rids_p = []
+            mapped_p = []
+            for c in range(len(candidates)):
+                rids_p.append(candidates[c]["rid"])
+                mapped_p.append(candidates[c]["mapped"])
+                if i == p_index and rid == candidates[c]["rid"]:
+                    r_index = c
+            self.candidate_rid.append(rids_p)
+            candidate_map.append(mapped_p)
+        print "Peforming forward propagation..."
+        print r_index
+        # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
+        if r_index >= rank:
+            current_road = road_network.roads.get(id=self.candidate_rid[p_index][r_index])
+            if p_index != 0:
+                for c in range(rank):
+                    prev_road = road_network.roads.get(id=self.candidate_rid[p_index - 1][c])
+                    route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
+                    tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index - 1].p) - route[0])
+                    tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                    self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
+            if p_index != len(p_list) - 1:
+                for c in range(rank):
+                    next_road = road_network.roads.get(id=self.candidate_rid[p_index + 1][c])
+                    route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
+                    tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index + 1].p) - route[0])
+                    tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                    self.transition_prob[p_index][rank - 1][c] = tran_prob
+            self.candidate_rid[p_index][rank - 1] = self.candidate_rid[p_index][r_index]
+            candidate_map[p_index][rank - 1] = candidate_map[p_index][r_index]
+            r_index = rank - 1
+        print r_index
+        # If the first point is chosen, also need to modify its map_matching_prob
+        if p_index == 0:
+            for i in range(len(self.emission_prob[0])):
+                if i == r_index:
+                    ini_prob.append(self.emission_prob[0][i] * 1.0)
+                else:
+                    ini_prob.append(self.emission_prob[0][i] * 0.0)
+        else:
+            for first in self.emission_prob[0]:
+                ini_prob.append(first)
+        self.map_matching_prob.append(ini_prob)
+        #	print p_index
+        #	print r_index
+        #	print len(self.transition_prob)
+        for t in range(len(self.transition_prob)):
+            state_prob = []
+            prev_index = []
+            connect_prob = []
+            for current in self.transition_prob[t]:
+                #		print len(current)
+                candidate_prob = []
+                for i in range(len(current)):
+                    if t == p_index:
+                        if i == r_index:
+                            print "Fixed"
+                            value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i] * 1.0
+                        else:
+                            value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i] * 0.0
+                    else:
+                        value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i]
+                    candidate_prob.append(value)
+                state_prob.append(max(candidate_prob))
+                prev_index.append(candidate_prob.index(max(candidate_prob)))
+                connect_prob.append(candidate_prob)
+            chosen_index.append(prev_index)
+            self.map_matching_prob.append(state_prob)
+            self.brute_force_prob.append(connect_prob)
+        hmm_path_index = []
+        hmm_path_rids = []
+        connect_routes = []
+        print "Performing backward tracing..."
+        final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
+        final_index = final_prob.index(max(final_prob))
+        final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
+        current_index = final_index
+        hmm_path_index.append(final_index)
+        hmm_path_rids.append(final_rid)
+        for i in range(len(chosen_index), 0, -1):
+            prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
+            #            connect_route = self.transition_route[i - 1][current_index][prev_index]
+            prev_rid = self.candidate_rid[i - 1][prev_index]
+            hmm_path_index.append(prev_index)
+            hmm_path_rids.append(prev_rid)
+            prev_road = road_network.roads.get(id=prev_rid)
+            current_rid = self.candidate_rid[i][current_index]
+            current_road = road_network.roads.get(id=current_rid)
+            connect_route = ShortestPath.shortest_path_astar(road_network, candidate_map[i - 1][prev_index], prev_road, candidate_map[i][current_index], current_road)
+            connect_routes.append(connect_route[1])
+            current_index = prev_index
+        hmm_path_rids.reverse()
+        connect_routes.reverse()
+        return [hmm_path_rids, connect_routes]
+
+    def perform_map_matching(self, road_network, trace, rank):
         print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
-        self.hmm_prob_model(road_network, trace, rank)
+        beta = self.hmm_prob_model(road_network, trace, rank)
         print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
@@ -219,53 +359,45 @@ class HmmMapMatching:
             print fragment.p
             for sec in fragment.road.intersection.all():
                 print sec.id
-        return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
+        print self.map_matching_prob
+        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'beta': beta}
 
-        # def reperform_map_matching(self, road_network, trace, prob, rank, diff):
-        #        print "Combining user's preference..."
-        #        # Assuming the structure of diff is: [[point_index_from_trace, road_id], [...], ...]
-        #        self.map_matching_prob = prob
-        #        for chosen in diff:
-        #            p = trace.p.all()[chosen[0]]
-        #            candidates = find_candidates_from_road(road_network, p.p)
-        #            for c in range(0, len(candidates)):
-        #                if candidates[c]["rid"] == chosen[1]:
-        #                    if c >= rank:
-        #                        print "The chosen road mapped to point " + str(chosen[0]) + " is not in the top " + str(rank) + " candidates!"
-        #                    else:
-        #                        for i in range(rank):
-        #                            if i == c:
-        #                                self.map_matching_prob[chosen[0]][c] = 1.0
-        #                            else:
-        #                                self.map_matching_prob[chosen[0]][c] = 0.0
-        #                break
-        #        print "Implementing viterbi algorithm..."
-        #        sequence = self.hmm_viterbi_backward([])
-        #        hmm_path = Path(id=trace.id)
-        #        hmm_path.save()
-        #        path_fragment = None
-        #        p_index = []
-        #	print sequence[0]
-        #        for i in range(0, len(sequence[0])):
-        #	    print sequence[1][i]
-        #            if i > 0:
-        #                print sequence[0][i] == sequence[1][i - 1][0]
-        #            if i > 0 and len(sequence[1][i - 1]) > 1:
-        #                if path_fragment is not None:
-        #                    path_fragment.p = ','.join(map(str, p_index))
-        #                    path_fragment.save()
-        #                    hmm_path.road.add(path_fragment)
-        #                    p_index = []
-        #                if len(sequence[1][i - 1]) > 2:
-        #                    for j in range(1, len(sequence[1][i - 1]) - 1):
-        #                        next_road = road_network.roads.get(id=sequence[1][i - 1][j])
-        #                        path_fragment = PathFragment(road=next_road)
-        #                        path_fragment.save()
-        #                        hmm_path.road.add(path_fragment)
-        #                next_road = road_network.roads.get(id=sequence[0][i])
-        #                path_fragment = PathFragment(road=next_road)
-        #                path_fragment.save()
-        #                prev_id = sequence[0][i]
-        #            p_index.append(i)
-        #        hmm_path.save()
-        #        return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
+    def reperform_map_matching(self, road_network, trace, rank, pid, rid, beta):
+        print "Reperform map matching with human label..."
+        print pid
+        print rid
+        sequence = self.hmm_with_label(road_network, trace, rank, pid, rid, beta)
+        hmm_path = Path(id=trace.id)
+        for prev_fragment in hmm_path.road.all():
+            hmm_path.road.remove(prev_fragment)
+        hmm_path.save()
+        ini_road = road_network.roads.get(id=sequence[0][0])
+        path_fragment = PathFragment(road=ini_road)
+        path_fragment.save()
+        p_index = []
+        print sequence[0]
+        for i in range(0, len(sequence[0])):
+            if i > 0:
+                print sequence[1][i - 1]
+                print sequence[0][i] == sequence[1][i - 1][-1]
+            if i > 0 and len(sequence[1][i - 1]) > 1:
+                path_fragment.p = ','.join(map(str, p_index))
+                path_fragment.save()
+                hmm_path.road.add(path_fragment)
+                p_index = []
+                if len(sequence[1][i - 1]) > 2:
+                    for j in range(1, len(sequence[1][i - 1]) - 1):
+                        next_road = road_network.roads.get(id=sequence[1][i - 1][j])
+                        path_fragment = PathFragment(road=next_road)
+                        path_fragment.save()
+                        hmm_path.road.add(path_fragment)
+                next_road = road_network.roads.get(id=sequence[0][i])
+                path_fragment = PathFragment(road=next_road)
+                path_fragment.save()
+                prev_id = sequence[0][i]
+            p_index.append(i)
+        path_fragment.p = ','.join(map(str, p_index))
+        path_fragment.save()
+        hmm_path.road.add(path_fragment)
+        hmm_path.save()
+        return {'path': hmm_path, 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}

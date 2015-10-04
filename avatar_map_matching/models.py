@@ -14,3 +14,27 @@ class ShortestPathIndex(models.Model):
 
     class Meta:
         unique_together = ("city", "start", "end")
+
+
+class HmmEmissionTable(models.Model):
+    city = models.ForeignKey(RoadNetwork)
+    traj = models.ForeignKey(Trajectory)
+    table = models.TextField(max_length=65535, null=True)
+
+    def __str__(self):
+        return str(self.table)
+
+    class Meta:
+        unique_together = ("city", "traj")
+
+
+class HmmTransitionTable(models.Model):
+    city = models.ForeignKey(RoadNetwork)
+    traj = models.ForeignKey(Trajectory)
+    table = models.TextField(max_length=65535, null=True)
+
+    def __str__(self):
+        return str(self.table)
+
+    class Meta:
+        unique_together = ("city", "traj")
