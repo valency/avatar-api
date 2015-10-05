@@ -30,6 +30,7 @@ INSTALLED_APPS = (
     'mptt',
     'avatar',
     'avatar_core',
+    'avatar_user',
     'avatar_map_matching'
 )
 
