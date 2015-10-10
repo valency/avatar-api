@@ -107,7 +107,7 @@ def create_road_network_from_local_file(request):
         try:
             rr.intersection.add(ii)
         except IntegrityError:
-            # print "Warning: road " + road.id + " has only one intersection"
+            print "Warning: road " + road.id + " has only one intersection"
             pass
         # Calculate road length
         rr.length = int(Distance.road_length(rr))
