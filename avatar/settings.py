@@ -31,7 +31,8 @@ INSTALLED_APPS = (
     'avatar',
     'avatar_core',
     'avatar_user',
-    'avatar_map_matching'
+    'avatar_map_matching',
+    'avatar_simulator'
 )
 
 MIDDLEWARE_CLASSES = (
