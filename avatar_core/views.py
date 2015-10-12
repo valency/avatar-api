@@ -13,7 +13,7 @@ from celery.result import AsyncResult
 from serializers import *
 from geometry import *
 
-CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
+CSV_UPLOAD_DIR = "/home/bobchew/Workspace/Data/"
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):

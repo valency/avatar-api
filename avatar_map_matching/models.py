@@ -25,7 +25,11 @@ class HmmEmissionTable(models.Model):
         return str(self.table)
 
     class Meta:
+<<<<<<< HEAD
         unique_together = ("city", "traj")
+=======
+	unique_together = ("city", "traj")
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a
 
 
 class HmmTransitionTable(models.Model):
@@ -34,7 +38,14 @@ class HmmTransitionTable(models.Model):
     table = models.TextField(max_length=65535, null=True)
 
     def __str__(self):
+<<<<<<< HEAD
         return str(self.table)
 
     class Meta:
         unique_together = ("city", "traj")
+=======
+	return str(self.table)
+
+    class Meta:
+	unique_together = ("city", "traj")
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a
