@@ -12,6 +12,7 @@ from models import *
 def find_candidate_road_by_p(request):
     if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
+<<<<<<< HEAD
         p = Point(lat=float(request.GET['lat']), lng=float(request.GET['lng']))
         dist = 500.0
         if 'dist' in request.GET:
@@ -23,6 +24,19 @@ def find_candidate_road_by_p(request):
                 candidate_rids.append(candidate["rid"])
             else:
                 break
+=======
+	p = Point(lat=float(request.GET['lat']), lng=float(request.GET['lng']))
+	dist = 500.0
+	if 'dist' in request.GET:
+	    dist = float(request.GET['dist'])
+	candidate_rids = []
+	candidates = find_candidates_from_road(city, p)
+	for candidate in candidates:
+	    if candidate["dist"] < dist:
+		candidate_rids.append(candidate["rid"])
+	    else:
+		break
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a
         return Response(candidate_rids)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -38,6 +52,7 @@ def map_matching(request):
         traj = Trajectory.objects.get(id=request.GET['id'])
         hmm = HmmMapMatching()
         hmm_result = hmm.perform_map_matching(city, traj.trace, candidate_rank)
+<<<<<<< HEAD
         path = hmm_result['path']
         traj.path = path
         traj.save()
@@ -116,6 +131,8 @@ def reperform_map_matching(request):
         hmm.emission_prob = emission_prob
         hmm.transition_prob = transition_prob
         hmm_result = hmm.reperform_map_matching(city, traj.trace, candidate_rank, p_index, request.GET['rid'], beta)
+=======
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a
         path = hmm_result['path']
         traj.path = path
         traj.save()
