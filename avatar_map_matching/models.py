@@ -1,4 +1,5 @@
 from avatar_core.models import *
+from avatar_user.models import *
 
 
 class ShortestPathIndex(models.Model):
@@ -38,3 +39,23 @@ class HmmTransitionTable(models.Model):
 
     class Meta:
         unique_together = ("city", "traj")
+
+
+class Action(models.Model):
+    point = models.ForeignKey(Sample)
+    road = models.ForeignKey(Road)
+
+    def __str__(self):
+	return "(" + str(self.point.lat) + "," + str(self.point.lng) + ")" + ":" + str(self.road.id)
+
+
+class UserActionHistory(models.Model):
+    user = models.ForeignKey(Account)
+    traj = mdeels.ForeignKey(Trajectory)
+    action = models.ManyToManyField(Action)
+
+    def __str__(self):
+	return str(user.id) + "," + str(traj.id)
+
+    class Meta:
+        unique_together = ("user", "traj")

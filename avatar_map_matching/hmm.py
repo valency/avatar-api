@@ -211,51 +211,58 @@ class HmmMapMatching:
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes]
 
-    def hmm_with_label(self, road_network, trace, rank, p_index, rid, beta):
+    def hmm_with_label(self, road_network, trace, rank, action_list, beta):
+	action_set = {}
+	r_index_set = {}
         p_list = trace.p.all()
+	# Get all the (p_index, rid) pair from action_list
+	for action in action_list.action.all():
+	    for i in range(len(p_list)):
+		if p_list[i].id == action.point.id:
+		    action_set[i] = action.road.id
         candidate_map = []
         chosen_index = []
         ini_prob = []
-        # Find the index of the candidate road for the query sample
-        r_index = 16777215
-        for i in range(len(p_list)):
-            candidates = find_candidates_from_road(road_network, p_list[i].p)
-            rids_p = []
-            mapped_p = []
-            for c in range(len(candidates)):
-                rids_p.append(candidates[c]["rid"])
-                mapped_p.append(candidates[c]["mapped"])
-                if i == p_index and rid == candidates[c]["rid"]:
-                    r_index = c
-            self.candidate_rid.append(rids_p)
-            candidate_map.append(mapped_p)
+        # Find the index of the candidate road for each query sample
+	for p_index in action_set:
+            for i in range(len(p_list)):
+                candidates = find_candidates_from_road(road_network, p_list[i].p)
+                rids_p = []
+                mapped_p = []
+                for c in range(len(candidates)):
+                    rids_p.append(candidates[c]["rid"])
+                    mapped_p.append(candidates[c]["mapped"])
+                    if i == p_index and action_set[p_index] == candidates[c]["rid"]:
+                        r_index_set[p_index] = c
+                self.candidate_rid.append(rids_p)
+                candidate_map.append(mapped_p)
         print "Peforming forward propagation..."
-        print r_index
         # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
-        if r_index >= rank:
-            current_road = road_network.roads.get(id=self.candidate_rid[p_index][r_index])
-            if p_index != 0:
-                for c in range(rank):
-                    prev_road = road_network.roads.get(id=self.candidate_rid[p_index - 1][c])
-                    route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
-                    tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index - 1].p) - route[0])
-                    tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
-                    self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
-            if p_index != len(p_list) - 1:
-                for c in range(rank):
-                    next_road = road_network.roads.get(id=self.candidate_rid[p_index + 1][c])
-                    route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
-                    tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index + 1].p) - route[0])
-                    tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
-                    self.transition_prob[p_index][rank - 1][c] = tran_prob
-            self.candidate_rid[p_index][rank - 1] = self.candidate_rid[p_index][r_index]
-            candidate_map[p_index][rank - 1] = candidate_map[p_index][r_index]
-            r_index = rank - 1
-        print r_index
+	for p_index in r_index_set:
+	    r_index = r_index_set[p_index]
+            if r_index >= rank:
+                current_road = road_network.roads.get(id=self.candidate_rid[p_index][r_index])
+                if p_index != 0:
+                    for c in range(rank):
+                        prev_road = road_network.roads.get(id=self.candidate_rid[p_index - 1][c])
+                        route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
+                        tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index - 1].p) - route[0])
+                        tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                        self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
+                if p_index != len(p_list) - 1:
+                    for c in range(rank):
+                        next_road = road_network.roads.get(id=self.candidate_rid[p_index + 1][c])
+                        route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
+                        tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index + 1].p) - route[0])
+                        tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                        self.transition_prob[p_index][rank - 1][c] = tran_prob
+                self.candidate_rid[p_index][rank - 1] = self.candidate_rid[p_index][r_index]
+                candidate_map[p_index][rank - 1] = candidate_map[p_index][r_index]
+                r_index_set[p_index] = rank - 1
         # If the first point is chosen, also need to modify its map_matching_prob
-        if p_index == 0:
+        if 0 in action_set:
             for i in range(len(self.emission_prob[0])):
-                if i == r_index:
+                if i == r_index_set[0]:
                     ini_prob.append(self.emission_prob[0][i] * 1.0)
                 else:
                     ini_prob.append(self.emission_prob[0][i] * 0.0)
@@ -274,8 +281,8 @@ class HmmMapMatching:
                 #		print len(current)
                 candidate_prob = []
                 for i in range(len(current)):
-                    if t == p_index:
-                        if i == r_index:
+                    if t in action_set:
+                        if i == r_index_set[t]:
                             print "Fixed"
                             value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i] * 1.0
                         else:
@@ -360,13 +367,11 @@ class HmmMapMatching:
             for sec in fragment.road.intersection.all():
                 print sec.id
         print self.map_matching_prob
-        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'beta': beta}
+        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
 
-    def reperform_map_matching(self, road_network, trace, rank, pid, rid, beta):
+    def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
         print "Reperform map matching with human label..."
-        print pid
-        print rid
-        sequence = self.hmm_with_label(road_network, trace, rank, pid, rid, beta)
+        sequence = self.hmm_with_label(road_network, trace, rank, action_list, beta)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():
             hmm_path.road.remove(prev_fragment)
