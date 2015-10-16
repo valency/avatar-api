@@ -93,7 +93,7 @@ def add_noise(point, delta_lat, delta_lng):
     noised_p = Point(lat=noised_lat, lng=noised_lng)
     return noised_p
 
-def synthetic_traj_generator(road_network, num_traj, num_sample, start, end, num_edge, delta_lat, delta_lng, missing_rate):
+def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, delta_lat, delta_lng, missing_rate):
     print "Building road network graph..."
     graph = build_road_network_graph(road_network)
     traj_set = []
@@ -114,8 +114,11 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, start, end, num
 	    source = None
 	    if start is not None:
 		source = start.id
-	    else:
+	    elif end is not None:
 		source = end.id
+	    else:
+		intersections = road_network.intersections.all()
+		source = intersections[random.randint(0, len(intersections) - 1)].id
 	    # Select the target intersections with the right path length to source
 	    target_set = []
 	    path_set = nx.single_source_shortest_path(graph, source, num_edge)
@@ -160,32 +163,40 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, start, end, num
 	d = travel_direction(prev_road, prev_sec)
 	prev_l = ini_p[1] + int(-0.5 * d + 0.5)
 	prev_path_index = 0
+	prev_time = ini_time
 	ini_dis = abs(Distance.length_to_start(ini_p[0], ini_road) - Distance.length_to_start(prev_sec.p, ini_road))
 	avg_length = int((path[0] - ini_dis) / num_sample)
 	for j in range(num_sample - 1):
             print "Generating the " + str(j + 2) + "th sample..."
             # Generate the next sample
 	    next_p = next_point(path, prev_p, prev_road, prev_l, prev_sec, prev_path_index, avg_length)
-	    # Add Guassian noise to each sample point
-            noised_p = add_noise(next_p[0], delta_lat, delta_lng)
-            noised_p.save()
-            next_sample_id = 100000000 + i + j + 1
-	    time_interval = sample_rate + random.randint(-10, 10)
-            next_time = prev_sample.t + timedelta(seconds=time_interval)
-            next_sample = Sample(id=str(next_sample_id), p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
-            next_sample.save()
-            traj.trace.p.add(next_sample)
+	    miss = random.random()
+	    if miss > missing_rate:
+	        # Add Guassian noise to each sample point
+                noised_p = add_noise(next_p[0], delta_lat, delta_lng)
+                noised_p.save()
+                next_sample_id = 100000000 + i + j + 1
+	        time_interval = sample_rate + random.randint(-10, 10)
+                next_time = prev_time + timedelta(seconds=time_interval)
+                next_sample = Sample(id=str(next_sample_id), p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
+            	next_sample.save()
+            	traj.trace.p.add(next_sample)
 	    if len(next_p[5]) == 1:
-		traj_rids[len(traj_rids) - 1][1].append(j + 1)
+		if miss > missing_rate:
+		    traj_rids[len(traj_rids) - 1][1].append(j + 1)
 	    else:
 		for ii in range(1, len(next_p[5]) - 1):
-		    traj_rids.append([next_p[5][ii].id], None)
-		traj_rids.append([next_p[5][len(next_p[5] - 1)].id, [j + 1]])
+		    traj_rids.append([next_p[5][ii].id], [])
+		if miss > missing_rate:
+		    traj_rids.append([next_p[5][len(next_p[5] - 1)].id, [j + 1]])
+		else:
+		    traj_rids.append([next_p[5][len(next_p[5] - 1)].id, []])
             prev_p = next_p[0]
             prev_road = next_p[1]
             prev_l = next_p[2]
 	    prev_path_index = next_p[3]
             prev_sec = next_p[4]
+	    prev_time = next_time
 	traj_set.append(traj)
         ground_truth.append(traj_rids)
     return [traj_set, ground_truth]
