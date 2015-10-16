@@ -46,16 +46,16 @@ class Action(models.Model):
     road = models.ForeignKey(Road)
 
     def __str__(self):
-	return "(" + str(self.point.lat) + "," + str(self.point.lng) + ")" + ":" + str(self.road.id)
+	return str(self.point.id) + ":" + str(self.road.id)
 
 
 class UserActionHistory(models.Model):
     user = models.ForeignKey(Account)
-    traj = mdeels.ForeignKey(Trajectory)
+    traj = models.ForeignKey(Trajectory)
     action = models.ManyToManyField(Action)
 
     def __str__(self):
-	return str(user.id) + "," + str(traj.id)
+	return str(self.user.id) + "," + str(self.traj.id)
 
     class Meta:
         unique_together = ("user", "traj")

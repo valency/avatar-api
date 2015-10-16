@@ -1,6 +1,7 @@
 import random
 from datetime import *
 from avatar_core.geometry import *
+from avatar_map_matching.shortest_path import *
 
 def time_generator():
     year = 2014
@@ -107,7 +108,7 @@ def add_noise(point, delta_lat, delta_lng):
     noised_lng = point.lng + random.gauss(0, delta_lng * 0.5)
     noised_p = Point(lat=noised_lat, lng=noised_lng)
     return noised_p
-
+	
 def traj_generator(road_network, num_traj, num_sample, stop_rate, sample_rate, delta_lat, delta_lng):
     print "Loading road network..."
     road_set = road_network.roads.all()

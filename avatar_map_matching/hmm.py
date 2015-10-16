@@ -1,4 +1,5 @@
 from shortest_path import *
+from avatar_core.common import *
 
 
 def find_candidates_from_road(road_network, point):
@@ -36,7 +37,7 @@ class HmmMapMatching:
         self.map_matching_prob = []
         self.brute_force_prob = []
 
-    def hmm_parameters(self, road_network, trace, rank):
+    def hmm_parameters(self, road_network, graph, trace, rank):
         deltas = []
         betas = []
         prev_p = None
@@ -83,10 +84,8 @@ class HmmMapMatching:
                         if candidates[c]["rid"] is not None and prev_candidates[pc]["rid"] is not None:
                             current_road = road_network.roads.get(id=candidates[c]["rid"])
                             prev_road = road_network.roads.get(id=prev_candidates[pc]["rid"])
-                            #  route = ShortestPath.shortest_path_astar(road_network, candidates[c]["mapped"], current_road, prev_candidates[pc]["mapped"], prev_road)
-                            route = ShortestPath.shortest_path_astar(road_network, prev_candidates[pc]["mapped"], prev_road, candidates[c]["mapped"], current_road)
+                            route = ShortestPath.shortest_path_astar(road_network, graph, prev_candidates[pc]["mapped"], prev_road, candidates[c]["mapped"], current_road)
                             dist_pc = abs(Distance.earth_dist(p.p, prev_p) - route[0])
-                            #  dist_pc = abs(Distance.earth_dist(p.p, prev_p))
                         else:
                             dist_pc = 16777215.0
                             route = [[], []]
@@ -98,7 +97,7 @@ class HmmMapMatching:
                 self.transition_route.append(tran_r)
                 # save the transition distance between the nearest candidates of each two points
                 prev_road = road_network.roads.get(id=prev_candidates[0]["rid"])
-                beta_route = ShortestPath.shortest_path_astar(road_network, candidates[0]["mapped"], nearest_road, prev_candidates[0]["mapped"], prev_road)
+                beta_route = ShortestPath.shortest_path_astar(road_network, graph, candidates[0]["mapped"], nearest_road, prev_candidates[0]["mapped"], prev_road)
                 beta_p = abs(Distance.earth_dist(p.p, prev_p) - beta_route[0])
                 #		print str(p.p.lat) + "," + str(p.p.lng) + ";" + str(prev_p.lat) + "," + str(prev_p.lng)
                 #                beta_p = abs(Distance.earth_dist(p.p, prev_p))
@@ -114,8 +113,8 @@ class HmmMapMatching:
         beta = betas[len(betas) / 2] / 0.69314718
         return {'delta': delta, 'beta': beta}
 
-    def hmm_prob_model(self, road_network, trace, rank):
-        para = self.hmm_parameters(road_network, trace, rank)
+    def hmm_prob_model(self, road_network, graph, trace, rank):
+        para = self.hmm_parameters(road_network, graph, trace, rank)
         emission_para = 1.0 / (math.sqrt(2 * math.pi) * para['delta'])
         transition_para = 1.0 / para['beta']
 
@@ -211,7 +210,7 @@ class HmmMapMatching:
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes]
 
-    def hmm_with_label(self, road_network, trace, rank, action_list, beta):
+    def hmm_with_label(self, road_network, graph, trace, rank, action_list, beta):
 	action_set = {}
 	r_index_set = {}
         p_list = trace.p.all()
@@ -245,14 +244,14 @@ class HmmMapMatching:
                 if p_index != 0:
                     for c in range(rank):
                         prev_road = road_network.roads.get(id=self.candidate_rid[p_index - 1][c])
-                        route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
+                        route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
                         tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index - 1].p) - route[0])
                         tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
                         self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
                 if p_index != len(p_list) - 1:
                     for c in range(rank):
                         next_road = road_network.roads.get(id=self.candidate_rid[p_index + 1][c])
-                        route = ShortestPath.shortest_path_astar(road_network, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
+                        route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
                         tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index + 1].p) - route[0])
                         tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
                         self.transition_prob[p_index][rank - 1][c] = tran_prob
@@ -315,7 +314,7 @@ class HmmMapMatching:
             prev_road = road_network.roads.get(id=prev_rid)
             current_rid = self.candidate_rid[i][current_index]
             current_road = road_network.roads.get(id=current_rid)
-            connect_route = ShortestPath.shortest_path_astar(road_network, candidate_map[i - 1][prev_index], prev_road, candidate_map[i][current_index], current_road)
+            connect_route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[i - 1][prev_index], prev_road, candidate_map[i][current_index], current_road)
             connect_routes.append(connect_route[1])
             current_index = prev_index
         hmm_path_rids.reverse()
@@ -323,11 +322,13 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes]
 
     def perform_map_matching(self, road_network, trace, rank):
-        print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
-        beta = self.hmm_prob_model(road_network, trace, rank)
+#        print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
+	print "Building road network graph..."
+	graph = build_road_network_graph(road_network)
+        beta = self.hmm_prob_model(road_network, graph, trace, rank)
         print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
-        print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
+#        print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
         sequence = self.hmm_viterbi_backward(chosen_index)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():
@@ -370,8 +371,10 @@ class HmmMapMatching:
         return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
+	print "Building road network graph..."
+        graph = build_road_network_graph(road_network)
         print "Reperform map matching with human label..."
-        sequence = self.hmm_with_label(road_network, trace, rank, action_list, beta)
+        sequence = self.hmm_with_label(road_network, graph, trace, rank, action_list, beta)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():
             hmm_path.road.remove(prev_fragment)
