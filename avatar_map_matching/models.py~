@@ -1,5 +1,4 @@
 from avatar_core.models import *
-from avatar_user.models import *
 
 
 class ShortestPathIndex(models.Model):
@@ -26,7 +25,11 @@ class HmmEmissionTable(models.Model):
         return str(self.table)
 
     class Meta:
+<<<<<<< HEAD
         unique_together = ("city", "traj")
+=======
+	unique_together = ("city", "traj")
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a
 
 
 class HmmTransitionTable(models.Model):
@@ -35,27 +38,14 @@ class HmmTransitionTable(models.Model):
     table = models.TextField(max_length=65535, null=True)
 
     def __str__(self):
+<<<<<<< HEAD
         return str(self.table)
 
     class Meta:
         unique_together = ("city", "traj")
-
-
-class Action(models.Model):
-    point = models.ForeignKey(Sample)
-    road = models.ForeignKey(Road)
-
-    def __str__(self):
-	return str(self.point.id) + ":" + str(self.road.id)
-
-
-class UserActionHistory(models.Model):
-    user = models.ForeignKey(Account)
-    traj = models.ForeignKey(Trajectory)
-    action = models.ManyToManyField(Action)
-
-    def __str__(self):
-	return str(self.user.id) + "," + str(self.traj.id)
+=======
+	return str(self.table)
 
     class Meta:
-        unique_together = ("user", "traj")
+	unique_together = ("city", "traj")
+>>>>>>> b562233098ac8e62c4e170769207445a853b5f6a

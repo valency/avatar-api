@@ -90,3 +90,11 @@ def verify(request):
             return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_all_users(request):
+    user_id = []
+    for user in Account.objects.all():
+	user_id.append(user.id)
+    return Response(user_id)
