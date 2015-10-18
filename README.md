@@ -10,8 +10,10 @@ sudo apt-get install php5-curl
 ```
 sudo nano /etc/php5/apache2/php.ini
 ```
+
 >   upload_max_filesize = 8M `>>` 1024M
 >   post_max_size = 8M `>>` 1024M
+
 ```
 sudo service apache2 restart
 ```
@@ -20,7 +22,9 @@ sudo service apache2 restart
 sudo /etc/init.d/postgresql stop
 sudo nano /etc/postgresql/9.4/main/pg_hba.conf
 ```
+
 >   all all peer / ident `>>` all all trust
+
 ```
 export PATH=/usr/lib/postgresql/9.4/bin/:$PATH
 mkdir ./run
