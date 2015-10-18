@@ -12,6 +12,7 @@ sudo nano /etc/php5/apache2/php.ini
 ```
 
 >   upload_max_filesize = 8M `>>` 1024M
+
 >   post_max_size = 8M `>>` 1024M
 
 ```
