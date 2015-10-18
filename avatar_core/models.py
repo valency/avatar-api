@@ -139,6 +139,7 @@ class RoadNetwork(models.Model):
     grid_lng_count = models.IntegerField(null=True)
     pmin = models.ForeignKey(Point, related_name="pmin", null=True)
     pmax = models.ForeignKey(Point, related_name="pmax", null=True)
+    graph = models.CharField(max_length=10485760, null=True)
 
     def __str__(self):
         return self.city

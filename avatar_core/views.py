@@ -1,19 +1,26 @@
 import uuid
 import csv
+import json
 from datetime import datetime
+
+import networkx
 
 from django.db import IntegrityError
 from django.db.models import Max, Min
 from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+
 from celery.result import AsyncResult
+
+from networkx.readwrite import json_graph
 
 from serializers import *
 from geometry import *
 
-CSV_UPLOAD_DIR = "/home/bobchew/Workspace/Data/"
+CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
@@ -377,3 +384,27 @@ def get_all_road_network_id(request):
             "grid_cell_count": road_network.grid_cells.count()
         })
     return Response(road_networks)
+
+
+@api_view(['GET'])
+def create_graph_by_road_network_id(request):
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        graph = networkx.Graph()
+        for road in road_network.roads.all():
+            intersections = road.intersection.all()
+            graph.add_edge(intersections[0].id, intersections[1].id, weight=road.length, id=road.id)
+        road_network.graph = json.dumps(json_graph.node_link_data(graph))
+        road_network.save()
+        return Response(status=status.HTTP_201_CREATED)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_graph_by_road_network_id(request):
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        return Response(json.loads(road_network.graph))
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

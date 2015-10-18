@@ -1,5 +1,8 @@
+import json
+
+from networkx.readwrite import json_graph
+
 from shortest_path import *
-from avatar_core.common import *
 
 
 def find_candidates_from_road(road_network, point):
@@ -211,19 +214,19 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes]
 
     def hmm_with_label(self, road_network, graph, trace, rank, action_list, beta):
-	action_set = {}
-	r_index_set = {}
+        action_set = {}
+        r_index_set = {}
         p_list = trace.p.all()
-	# Get all the (p_index, rid) pair from action_list
-	for action in action_list.action.all():
-	    for i in range(len(p_list)):
-		if p_list[i].id == action.point.id:
-		    action_set[i] = action.road.id
+        # Get all the (p_index, rid) pair from action_list
+        for action in action_list.action.all():
+            for i in range(len(p_list)):
+                if p_list[i].id == action.point.id:
+                    action_set[i] = action.road.id
         candidate_map = []
         chosen_index = []
         ini_prob = []
         # Find the index of the candidate road for each query sample
-	for p_index in action_set:
+        for p_index in action_set:
             for i in range(len(p_list)):
                 candidates = find_candidates_from_road(road_network, p_list[i].p)
                 rids_p = []
@@ -237,8 +240,8 @@ class HmmMapMatching:
                 candidate_map.append(mapped_p)
         print "Peforming forward propagation..."
         # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
-	for p_index in r_index_set:
-	    r_index = r_index_set[p_index]
+        for p_index in r_index_set:
+            r_index = r_index_set[p_index]
             if r_index >= rank:
                 current_road = road_network.roads.get(id=self.candidate_rid[p_index][r_index])
                 if p_index != 0:
@@ -322,13 +325,13 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes]
 
     def perform_map_matching(self, road_network, trace, rank):
-#        print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
-	print "Building road network graph..."
-	graph = build_road_network_graph(road_network)
+        #        print "Beginning: size of transition_prob is " + str(len(self.transition_prob))
+        print "Building road network graph..."
+        graph = json_graph.node_link_graph(json.loads(road_network.graph))
         beta = self.hmm_prob_model(road_network, graph, trace, rank)
         print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
-#        print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
+        #        print "After viterbi: size of transition_prob is " + str(len(self.transition_prob))
         sequence = self.hmm_viterbi_backward(chosen_index)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():
@@ -371,8 +374,8 @@ class HmmMapMatching:
         return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
-	print "Building road network graph..."
-        graph = build_road_network_graph(road_network)
+        print "Building road network graph..."
+        graph = json_graph.node_link_graph(json.loads(road_network.graph))
         print "Reperform map matching with human label..."
         sequence = self.hmm_with_label(road_network, graph, trace, rank, action_list, beta)
         hmm_path = Path(id=trace.id)
