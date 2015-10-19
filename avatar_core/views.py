@@ -393,7 +393,10 @@ def create_graph_by_road_network_id(request):
         graph = networkx.Graph()
         for road in road_network.roads.all():
             intersections = road.intersection.all()
-            graph.add_edge(intersections[0].id, intersections[1].id, weight=road.length, id=road.id)
+            if len(intersections) >= 2:
+                graph.add_edge(intersections[0].id, intersections[1].id, weight=road.length, id=road.id)
+            else:
+                print "WARNING: # of intersections of road " + str(road.id) + " is less than 2. This road will be ignored in the graph."
         road_network.graph = json.dumps(json_graph.node_link_data(graph))
         road_network.save()
         return Response(status=status.HTTP_201_CREATED)
