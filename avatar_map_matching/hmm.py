@@ -216,7 +216,7 @@ class HmmMapMatching:
     def hmm_with_label(self, road_network, graph, trace, rank, action_list, beta):
         action_set = {}
         r_index_set = {}
-        p_list = trace.p.all()
+        p_list = trace.p.all().order_by("t")
         # Get all the (p_index, rid) pair from action_list
         for action in action_list.action.all():
             for i in range(len(p_list)):
