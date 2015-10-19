@@ -1,5 +1,5 @@
 # The Avatar System: API Layer
-## Installation Guide for Ubuntu Server 14.04
+## Installation Guide for Ubuntu Server 14.04.3
 ### Install Required Packages
 ```
 sudo apt-get install lamp-server^
@@ -33,6 +33,7 @@ initdb -D ./pgdata
 echo "unix_socket_directories = '`pwd`/run'" >>./pgdata/postgresql.conf
 pg_ctl start -D ./pgdata -l ./run/postgres.log
 psql -h localhost -U <username> postgres -c "CREATE DATABASE avatar;"
+sudo /etc/init.d/postgresql restart
 ```
 ### Install Python Libraries
 ```
