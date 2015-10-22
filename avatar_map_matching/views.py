@@ -40,7 +40,6 @@ def map_matching(request):
         path = hmm_result['path']
         traj.path = path
         traj.save()
-        print hmm_result['transition_prob'][len(hmm_result['transition_prob']) - 1]
         try:
             table = HmmEmissionTable.objects.get(city=city, traj=traj)
             table.delete()
@@ -131,6 +130,48 @@ def reperform_map_matching(request):
         traj.path = path
         traj.save()
         return Response(TrajectorySerializer(traj).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_emission_table_by_traj(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        city = RoadNetwork.objects.get(id=request.GET['city'])
+        traj = Trajectory.objects.get(id=request.GET['id'])
+        emission_str = HmmEmissionTable.objects.get(city=city, traj=traj).table
+        emission_prob = []
+        for prob in emission_str.split(';'):
+            emission_1d = []
+            for p in prob.split(','):
+                emission_1d.append(float(p))
+            emission_prob.append(emission_1d)
+        return Response(emission_prob)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_transition_table_by_traj(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        city = RoadNetwork.objects.get(id=request.GET['city'])
+        traj = Trajectory.objects.get(id=request.GET['id'])
+        transition_str = HmmTransitionTable.objects.get(city=city, traj=traj).table
+        transition_prob = []
+        transition_set = transition_str.split(';')
+        beta = float(transition_set[len(transition_set) - 1])
+        for i in range(len(transition_set) - 1):
+            transition_2d = []
+            for p in transition_set[i].split(','):
+                transition_1d = []
+                for record in p.split(':'):
+                    transition_1d.append(float(record))
+                transition_2d.append(transition_1d)
+            transition_prob.append(transition_2d)
+        return Response({
+            "beta": beta,
+            "prob": transition_prob
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

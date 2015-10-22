@@ -127,18 +127,17 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         print "Generating the " + str(i + 1) + "th trajectory..."
         traj_rids = []
         # Generate trajectory information
-        taxi_id = random.randint(1, 20000)
-        #        trace = Trace.objects.get(id=str(i))
-        #	trace.delete()
-        trace = Trace(id=str(i))
+        taxi_id = str(uuid.uuid4())
+        trace_id = str(uuid.uuid4())
+        trace = Trace(id=trace_id)
         trace.save()
-        traj = Trajectory(id=str(i), taxi=str(taxi_id), trace=trace)
+        traj_id = str(uuid.uuid4())
+        traj = Trajectory(id=traj_id, taxi=taxi_id, trace=trace)
         traj.save()
         # Generate a shortest path
         if start is not None and end is not None:
             path = ShortestPath.check_shortest_path_from_db(road_network, graph, start, end)
         else:
-            source = None
             if start is not None:
                 source = start.id
             elif end is not None:
@@ -148,7 +147,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 source = intersections[random.randint(0, len(intersections) - 1)].id
             # Select the target intersections with the right path length to source
             target_set = []
-            path_set = nx.single_source_shortest_path(graph, source, num_edge)
+            path_set = networkx.single_source_shortest_path(graph, source, num_edge)
             for path_index in path_set:
                 if len(path_set[path_index]) == num_edge + 1:
                     target_set.append(path_index)
@@ -167,15 +166,15 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         print path
         # Generate the first sample
         print "Generating the first sample..."
-        ini_sample_id = 100000000 + i
+        ini_sample_id = str(uuid.uuid4())
         ini_time = time_generator()
         ini_road = road_network.roads.get(id=path[1][0])
         ini_p = initial_point(ini_road)
-        # Add Guassian noise to each sample point
+        # Add Gaussian noise to each sample point
         noised_p = add_noise(ini_p[0], delta_lat, delta_lng)
-        #	noised_p = ini_p[0]
+        # noised_p = ini_p[0]
         noised_p.save()
-        ini_sample = Sample(id=str(ini_sample_id), p=noised_p, t=ini_time, speed=0, angle=0, occupy=0, src=0)
+        ini_sample = Sample(id=ini_sample_id, p=noised_p, t=ini_time, speed=0, angle=0, occupy=0, src=0)
         ini_sample.save()
         traj.trace.p.add(ini_sample)
         traj_rids.append([ini_road.id, [0]])
@@ -205,14 +204,14 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             miss = random.random()
             next_time = None
             if miss > missing_rate:
-                # Add Guassian noise to each sample point
+                # Add Gaussian noise to each sample point
                 noised_p = add_noise(next_p[0], delta_lat, delta_lng)
-                #		noised_p = next_p[0]
+                # noised_p = next_p[0]
                 noised_p.save()
-                next_sample_id = 100000000 + i + j + 1
+                next_sample_id = str(uuid.uuid4())
                 time_interval = sample_rate + random.randint(-10, 10)
                 next_time = prev_time + timedelta(seconds=time_interval)
-                next_sample = Sample(id=str(next_sample_id), p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
+                next_sample = Sample(id=next_sample_id, p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
                 next_sample.save()
                 traj.trace.p.add(next_sample)
             if len(next_p[5]) == 1:

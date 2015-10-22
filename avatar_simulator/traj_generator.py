@@ -1,3 +1,4 @@
+# This source code contains problems and bugs to be fixed
 import random
 from datetime import *
 
@@ -136,9 +137,9 @@ def traj_generator(road_network, num_traj, num_sample, stop_rate, sample_rate, d
         ini_sample_id = 100000000 + i
         ini_time = time_generator()
         ini_p = initial_point(road_set)
-        # Add Guassian noise to each sample point
+        # Add Gaussian noise to each sample point
         noised_p = add_noise(ini_p[0], delta_lat, delta_lng)
-        #	noised_p = ini_p[0]
+        # noised_p = ini_p[0]
         noised_p.save()
         ini_stop = random.random()
         if ini_stop < stop_rate:
@@ -171,9 +172,9 @@ def traj_generator(road_network, num_traj, num_sample, stop_rate, sample_rate, d
                 next_stop = 1
             next_speed = random.randint(5, 25) * next_stop
             next_p = next_point(road_network, prev_p, prev_road, prev_l, prev_sample.speed, prev_sec, time_interval)
-            # Add Guassian noise to each sample point
+            # Add Gaussian noise to each sample point
             noised_p = add_noise(next_p[0], delta_lat, delta_lng)
-            #	    noised_p = next_p[0]
+            # noised_p = next_p[0]
             noised_p.save()
             next_sample_id = 100000000 + i + j + 1
             next_sample = Sample(id=str(next_sample_id), p=noised_p, t=next_time, speed=next_speed, angle=0, occupy=0, src=0)

@@ -1,6 +1,5 @@
 from rest_framework.decorators import api_view
 from rest_framework import status
-
 from rest_framework.response import Response
 
 from traj_generator import *
@@ -28,10 +27,6 @@ def generate_trajectory(request):
             delta_lng = float(request.GET['lng'])
         result = traj_generator(city, num_traj, num_sample, stop_rate, sample_rate, delta_lat, delta_lng)
         print "Finished!"
-        traj_id = []
-        #	for traj in result[0]:
-        #	    traj_id.append(traj.id)
-        #        return Response(traj_id)
         return Response(result[1])
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -66,11 +61,13 @@ def generate_synthetic_trajectory(request):
         if "miss" in request.GET:
             missing_rate = float(request.GET['miss'])
         result = synthetic_traj_generator(city, num_traj, num_sample, sample_rate, start, end, num_edge, delta_lat, delta_lng, missing_rate)
+        traj_id = []
+        for traj in result[0]:
+            traj_id.append(traj.id)
         print "Finished!"
-        #        traj_id = []
-        #       for traj in result[0]:
-        #           traj_id.append(traj.id)
-        #        return Response(traj_id)
-        return Response(result[1])
+        return Response({
+            "traj_id": traj_id,
+            "ground_truth": result[1]
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
