@@ -85,18 +85,31 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                 path_index += 1
                 rid = path[1][path_index]
                 road = road_network.roads.get(id=rid)
+                # Skip the road containing only one point
+                while len(road.p.all()) < 2:
+                    path_index += 1
+                    road = road_network.roads.get(id=path[1][ini_r_index])
                 move_path.append(road.id)
                 p_set = road.p.all()
+		connected = 0
+		temp_sec = None
                 for sec in road.intersection.all():
+		    print sec.id + ":" + str(sec.p.lat) + "," + str(sec.p.lng)
                     if sec.id != next_sec.id:
-                        next_sec = sec
-                        break
+                        temp_sec = sec
+		    else:
+                        connected = 1
+		if connected == 0:
+		    print "Next road is not connected with previous road!"
+		next_sec = temp_sec
                 d = travel_direction(road, next_sec)
                 print d
                 if d == 1:
                     next_l = 1
-                else:
+                elif d == -1:
                     next_l = len(p_set) - 2
+		else:
+		    print "Something is wrong while calculating direction!"
                 print "Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d].lat) + "," + str(p_set[next_l - d].lng) + ") on road " + str(road.id) + "..."
                 print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
             # Stick to the current road
@@ -168,7 +181,12 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         print "Generating the first sample..."
         ini_sample_id = str(uuid.uuid4())
         ini_time = time_generator()
-        ini_road = road_network.roads.get(id=path[1][0])
+	ini_r_index = 0
+        ini_road = road_network.roads.get(id=path[1][ini_r_index])
+        # Skip the road containing only one point
+        while len(ini_road.p.all()) < 2:
+            ini_r_index += 1
+            ini_road = road_network.roads.get(id=path[1][ini_r_index])
         ini_p = initial_point(ini_road)
         # Add Gaussian noise to each sample point
         noised_p = add_noise(ini_p[0], delta_lat, delta_lng)
@@ -182,14 +200,21 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         prev_p = ini_p[0]
         prev_road = ini_road
         prev_secset = prev_road.intersection.all()
-        second_road = road_network.roads.get(id=path[1][1])
+	second_r_index = ini_r_index + 1
+        second_road = road_network.roads.get(id=path[1][ini_r_index + 1])
+        # Skip the road containing only one point
+        while len(second_road.p.all()) < 2:
+            second_r_index += 1
+            second_road = road_network.roads.get(id=path[1][second_r_index])
         second_secset = second_road.intersection.all()
         if prev_secset[0].id == second_secset[0].id or prev_secset[0].id == second_secset[1].id:
             ini_sec = prev_secset[1]
             prev_sec = prev_secset[0]
-        else:
+        elif prev_secset[1].id == second_secset[0].id or prev_secset[1].id == second_secset[1].id:
             ini_sec = prev_secset[0]
             prev_sec = prev_secset[1]
+	else:
+	    "First road is not connected with second road!"
         d = travel_direction(prev_road, prev_sec)
         prev_l = ini_p[1]
         prev_path_index = 0
@@ -201,16 +226,15 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             print "Generating the " + str(j + 2) + "th sample..."
             # Generate the next sample
             next_p = next_point(road_network, path, prev_p, prev_road, prev_l, prev_sec, prev_path_index, avg_length)
+            time_interval = sample_rate + random.randint(0, 10)
+            next_time = prev_time + timedelta(seconds=time_interval)
             miss = random.random()
-            next_time = None
             if miss > missing_rate:
                 # Add Gaussian noise to each sample point
                 noised_p = add_noise(next_p[0], delta_lat, delta_lng)
                 # noised_p = next_p[0]
                 noised_p.save()
                 next_sample_id = str(uuid.uuid4())
-                time_interval = sample_rate + random.randint(-10, 10)
-                next_time = prev_time + timedelta(seconds=time_interval)
                 next_sample = Sample(id=next_sample_id, p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
                 next_sample.save()
                 traj.trace.p.add(next_sample)
@@ -224,12 +248,12 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                     traj_rids.append([next_p[5][len(next_p[5]) - 1], [j + 1]])
                 else:
                     traj_rids.append([next_p[5][len(next_p[5]) - 1], []])
+            prev_time = next_time
             prev_p = next_p[0]
             prev_road = next_p[1]
             prev_l = next_p[2]
             prev_path_index = next_p[3]
             prev_sec = next_p[4]
-            prev_time = next_time
         traj_set.append(traj)
         ground_truth.append(traj_rids)
     return [traj_set, ground_truth]
