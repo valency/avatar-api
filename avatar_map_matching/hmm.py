@@ -345,7 +345,7 @@ class HmmMapMatching:
             print fragment.p
             for sec in fragment.road.intersection.all():
                 print sec.id
-        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
+        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'brute_force_prob': self.brute_force_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
         print "Building road network graph..."
