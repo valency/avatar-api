@@ -161,28 +161,34 @@ class HmmMapMatching:
     def hmm_viterbi_backward(self, chosen_index):
         hmm_path_index = []
         hmm_path_rids = []
+        hmm_path_dist = []
         connect_routes = []
         print "Performing backward tracing..."
         final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
         final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
+        final_dist = self.emission_dist[len(self.candidate_rid) - 1][final_index]
         print final_prob
         print final_index
         print final_rid
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
+        hmm_path_dist.append(final_dist)
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             connect_route = self.transition_route[i - 1][current_index][prev_index]
             prev_rid = self.candidate_rid[i - 1][prev_index]
+            prev_dist = self.emission_dist[i - 1][prev_index]
             hmm_path_index.append(prev_index)
             hmm_path_rids.append(prev_rid)
+            hmm_path_dist.append(prev_dist)
             connect_routes.append(connect_route)
             current_index = prev_index
         hmm_path_rids.reverse()
+        hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes]
+        return [hmm_path_rids, connect_routes, hmm_path_dist]
 
     def hmm_with_label(self, road_network, graph, trace, rank, action_list, beta):
         action_set = {}
@@ -270,6 +276,7 @@ class HmmMapMatching:
         hmm_path_index = []
         hmm_path_rids = []
         connect_routes = []
+	hmm_path_dist = []
         print "Performing backward tracing..."
         # If the last point needs to tune, since it will not influent any latter choice, just fix the tuned rid
         if len(self.map_matching_prob) - 1 in action_set:
@@ -278,14 +285,18 @@ class HmmMapMatching:
             final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
             final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
+        final_dist = self.emission_dist[len(self.candidate_rid) - 1][final_index]
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
+	hmm_path_dist.append(final_dist)
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             prev_rid = self.candidate_rid[i - 1][prev_index]
+            prev_dist = self.emission_dist[i - 1][prev_index]
             hmm_path_index.append(prev_index)
             hmm_path_rids.append(prev_rid)
+            hmm_path_dist.append(prev_dist)
             prev_road = road_network.roads.get(id=prev_rid)
             current_rid = self.candidate_rid[i][current_index]
             current_road = road_network.roads.get(id=current_rid)
@@ -293,8 +304,9 @@ class HmmMapMatching:
             connect_routes.append(connect_route[1])
             current_index = prev_index
         hmm_path_rids.reverse()
+        hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes]
+        return [hmm_path_rids, connect_routes, hmm_path_dist]
 
     def perform_map_matching(self, road_network, trace, rank):
         print "Building road network graph..."
@@ -338,7 +350,7 @@ class HmmMapMatching:
             print fragment.p
             for sec in fragment.road.intersection.all():
                 print sec.id
-        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
+        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
         print "Building road network graph..."

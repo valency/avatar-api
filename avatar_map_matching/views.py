@@ -71,7 +71,10 @@ def map_matching(request):
         transition_src = transition_prob + ";" + str(hmm_result['beta'])
         transition_table = HmmTransitionTable(city=city, traj=traj, table=transition_src)
         transition_table.save()
-        return Response(TrajectorySerializer(traj).data)
+        return Response({
+            "traj": TrajectorySerializer(traj).data,
+            "dist": hmm_result['dist']
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
