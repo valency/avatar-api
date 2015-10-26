@@ -285,18 +285,14 @@ class HmmMapMatching:
             final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
             final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
-        final_dist = self.emission_dist[len(self.candidate_rid) - 1][final_index]
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
-	hmm_path_dist.append(final_dist)
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             prev_rid = self.candidate_rid[i - 1][prev_index]
-            prev_dist = self.emission_dist[i - 1][prev_index]
             hmm_path_index.append(prev_index)
             hmm_path_rids.append(prev_rid)
-            hmm_path_dist.append(prev_dist)
             prev_road = road_network.roads.get(id=prev_rid)
             current_rid = self.candidate_rid[i][current_index]
             current_road = road_network.roads.get(id=current_rid)
@@ -304,9 +300,8 @@ class HmmMapMatching:
             connect_routes.append(connect_route[1])
             current_index = prev_index
         hmm_path_rids.reverse()
-        hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes, hmm_path_dist]
+        return [hmm_path_rids, connect_routes]
 
     def perform_map_matching(self, road_network, trace, rank):
         print "Building road network graph..."
