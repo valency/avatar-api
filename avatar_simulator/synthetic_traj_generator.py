@@ -222,8 +222,9 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ini_dis = abs(Distance.length_to_start(ini_p[0], ini_road) - Distance.length_to_start(ini_sec.p, ini_road))
         avg_length = int((path[0] - ini_dis) / (num_sample - 1))
         print "Average length between each two sample is " + str(avg_length)
+        current_sample_num = 0
         for j in range(num_sample - 1):
-            print "Generating the " + str(j + 2) + "th sample..."
+            print "Generating the " + str(current_sample_num + 2) + "th sample..."
             # Generate the next sample
             next_p = next_point(road_network, path, prev_p, prev_road, prev_l, prev_sec, prev_path_index, avg_length)
             time_interval = sample_rate + random.randint(0, 10)
@@ -238,14 +239,15 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 next_sample = Sample(id=next_sample_id, p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
                 next_sample.save()
                 traj.trace.p.add(next_sample)
+                current_sample_num += 1
             if len(next_p[5]) == 1:
                 if miss > missing_rate:
-                    traj_rids[len(traj_rids) - 1][1].append(j + 1)
+                    traj_rids[len(traj_rids) - 1][1].append(current_sample_num)
             else:
                 for ii in range(1, len(next_p[5]) - 1):
                     traj_rids.append([next_p[5][ii], []])
                 if miss > missing_rate:
-                    traj_rids.append([next_p[5][len(next_p[5]) - 1], [j + 1]])
+                    traj_rids.append([next_p[5][len(next_p[5]) - 1], [current_sample_num]])
                 else:
                     traj_rids.append([next_p[5][len(next_p[5]) - 1], []])
             prev_time = next_time
