@@ -200,46 +200,36 @@ class HmmMapMatching:
                 if p_list[i].id == action.point.id:
                     action_set[i] = action.road.id
         print action_set
-        candidate_map = []
+        # candidate_map = []
         chosen_index = []
         ini_prob = []
         # Find the index of the candidate road for each query sample
         for p_index in action_set:
-            for i in range(len(p_list)):
-                candidates = find_candidates_from_road(road_network, p_list[i].p)
-                rids_p = []
-                mapped_p = []
-                for c in range(len(candidates)):
-                    rids_p.append(candidates[c]["rid"])
-                    mapped_p.append(candidates[c]["mapped"])
-                    if i == p_index and action_set[p_index] == candidates[c]["rid"]:
-                        r_index_set[p_index] = c
-                self.candidate_rid.append(rids_p)
-                candidate_map.append(mapped_p)
-        print r_index_set
-        print "Peforming forward propagation..."
-        # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
-        for p_index in r_index_set:
-            r_index = r_index_set[p_index]
-            if r_index >= rank:
-                current_road = road_network.roads.get(id=self.candidate_rid[p_index][r_index])
+            # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
+            if action_set[p_index] not in self.candidate_rid[p_index]:
+                current_road = road_network.roads.get(id=action_set[p_index])
+                p_map = Distance.point_map_to_road(p_list[p_index].p, current_road)
                 if p_index != 0:
                     for c in range(rank):
                         prev_road = road_network.roads.get(id=self.candidate_rid[p_index - 1][c])
-                        route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[p_index - 1][c], prev_road, candidate_map[p_index][r_index], current_road)
+                        prev_p_map = Distance.point_map_to_road(p_list[p_index - 1].p, prev_road)
+                        route = ShortestPath.shortest_path_astar(road_network, graph, prev_p_map["mapped"], prev_road, p_map["mapped"], current_road)
                         tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index - 1].p) - route[0])
                         tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
                         self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
                 if p_index != len(p_list) - 1:
                     for c in range(rank):
                         next_road = road_network.roads.get(id=self.candidate_rid[p_index + 1][c])
-                        route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[p_index][r_index], current_road, candidate_map[p_index + 1][c], next_road)
+                        next_p_map = Distance.point_map_to_road(p_list[p_index + 1].p, next_road)
+                        route = ShortestPath.shortest_path_astar(road_network, graph, p_map["mapped"], current_road, next_p_map["mapped"], next_road)
                         tran_dist = abs(Distance.earth_dist(p_list[p_index].p, p_list[p_index + 1].p) - route[0])
                         tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
                         self.transition_prob[p_index][rank - 1][c] = tran_prob
-                self.candidate_rid[p_index][rank - 1] = self.candidate_rid[p_index][r_index]
-                candidate_map[p_index][rank - 1] = candidate_map[p_index][r_index]
+                self.candidate_rid[p_index][rank - 1] = action_set[p_index]
                 r_index_set[p_index] = rank - 1
+            else:
+                r_index_set[p_index] = self.candidate_rid[p_index].index(action_set[p_index])
+        print "Performing forward propagation..."
         # If the first point is chosen, also need to modify its map_matching_prob
         if 0 in action_set:
             for i in range(len(self.emission_prob[0])):
@@ -296,7 +286,9 @@ class HmmMapMatching:
             prev_road = road_network.roads.get(id=prev_rid)
             current_rid = self.candidate_rid[i][current_index]
             current_road = road_network.roads.get(id=current_rid)
-            connect_route = ShortestPath.shortest_path_astar(road_network, graph, candidate_map[i - 1][prev_index], prev_road, candidate_map[i][current_index], current_road)
+            prev_p_map = Distance.point_map_to_road(p_list[i - 1].p, prev_road)
+            current_p_map = Distance.point_map_to_road(p_list[i].p, current_road)
+            connect_route = ShortestPath.shortest_path_astar(road_network, graph, prev_p_map["mapped"], prev_road, current_p_map["mapped"], current_road)
             connect_routes.append(connect_route[1])
             current_index = prev_index
         hmm_path_rids.reverse()

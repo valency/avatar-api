@@ -20,6 +20,7 @@ class ShortestPathIndex(models.Model):
 class HmmEmissionTable(models.Model):
     city = models.ForeignKey(RoadNetwork)
     traj = models.ForeignKey(Trajectory)
+    candidate = models.TextField(max_length=65535, null=True)
     table = models.TextField(max_length=65535, null=True)
 
     def __str__(self):
