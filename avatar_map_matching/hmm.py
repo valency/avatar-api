@@ -185,10 +185,11 @@ class HmmMapMatching:
             hmm_path_dist.append(prev_dist)
             connect_routes.append(connect_route)
             current_index = prev_index
+        hmm_path_index.reverse()
         hmm_path_rids.reverse()
         hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes, hmm_path_dist]
+        return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
 
     def hmm_with_label(self, road_network, graph, trace, rank, action_list, beta):
         action_set = {}
@@ -291,6 +292,7 @@ class HmmMapMatching:
             connect_route = ShortestPath.shortest_path_astar(road_network, graph, prev_p_map["mapped"], prev_road, current_p_map["mapped"], current_road)
             connect_routes.append(connect_route[1])
             current_index = prev_index
+        hmm_path_index.reverse()
         hmm_path_rids.reverse()
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes]
@@ -337,7 +339,7 @@ class HmmMapMatching:
             print fragment.p
             for sec in fragment.road.intersection.all():
                 print sec.id
-        return {'path': hmm_path, 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'brute_force_prob': self.brute_force_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
+        return {'path': hmm_path, 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
         print "Building road network graph..."

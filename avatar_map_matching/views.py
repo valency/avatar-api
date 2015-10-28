@@ -79,7 +79,7 @@ def map_matching(request):
         transition_table.save()
         return Response({
             "traj": TrajectorySerializer(traj).data,
-            "brute_force_prob": hmm_result['brute_force_prob'],
+            "path_index": hmm_result['path_index'],
             "dist": hmm_result['dist']
         })
     else:
