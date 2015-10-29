@@ -3,8 +3,8 @@
 ### Install Required Packages
 ```
 sudo apt-get install lamp-server^
-sudo apt-get install postgresql-9.4 postgresql-contrib
 sudo apt-get install php5-curl
+sudo apt-get install postgresql-9.4 postgresql-contrib
 ```
 ### Configure PHP 5
 ```
@@ -25,24 +25,19 @@ psql -h localhost -U postgres postgres -c "CREATE DATABASE avatar;"
 ```
 ### Install Python Libraries
 ```
-sudo apt-get install python-setuptools
-sudo apt-get install python-dev python-pip
-sudo apt-get install python-numpy
-sudo apt-get install python-scipy
+sudo apt-get install python-pip
+sudo apt-get install python-numpy python-scipy python-pandas
 sudo apt-get install python-psycopg2
-sudo apt-get install python-pandas
-sudo pip install markdown
-sudo pip install xlsxwriter
+sudo pip install markdown xlsxwriter networkx
 sudo pip install statsmodels
-sudo pip install networkx
 ```
 ### Install Django
 ```
 sudo pip install Django
 sudo pip install djangorestframework
-sudo pip install django-filter
-sudo pip install django-cors-headers
-sudo pip install django-queryset-csv
+sudo pip install django-filter django-cors-headers django-queryset-csv
+sudo pip install Celery
+sudo pip install django-celery
 ```
 ### Migrate Database
 ```
