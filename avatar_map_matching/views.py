@@ -40,6 +40,15 @@ def map_matching(request):
         path = hmm_result['path']
         traj.path = path
         traj.save()
+        # Save the hmm path for other use
+        try:
+            hmm_path_result = HmmPath.objects.get(city=city, traj=traj)
+            hmm_path_result.delete()
+        except ObjectDoesNotExist:
+            pass
+        hmm_path = HmmPath(city=city, traj=traj, path=path)
+        hmm_path.save()
+        # Save the emission table
         try:
             table = HmmEmissionTable.objects.get(city=city, traj=traj)
             table.delete()
@@ -59,6 +68,7 @@ def map_matching(request):
         emission_prob = ';'.join(emission_1d)
         emission_table = HmmEmissionTable(city=city, traj=traj, candidate=candidate_rid, table=emission_prob)
         emission_table.save()
+        # Save the transition table
         try:
             table = HmmTransitionTable.objects.get(city=city, traj=traj)
             table.delete()
@@ -77,9 +87,18 @@ def map_matching(request):
         transition_src = transition_prob + ";" + str(hmm_result['beta'])
         transition_table = HmmTransitionTable(city=city, traj=traj, table=transition_src)
         transition_table.save()
+        # Save the hmm path index
+        try:
+            index = HmmPathIndex.objects.get(city=city, traj=traj)
+            index.delete()
+        except ObjectDoesNotExist:
+            pass
+        path_index = hmm_result['path_index']
+        path_index_src = ','.join(map(str, path_index))
+        hmm_path_index = HmmPathIndex(city=city, traj=traj, index=path_index_src)
+        hmm_path_index.save()
         return Response({
             "traj": TrajectorySerializer(traj).data,
-            "path_index": hmm_result['path_index'],
             "dist": hmm_result['dist']
         })
     else:
@@ -155,16 +174,19 @@ def reperform_map_matching(request):
 @api_view(['GET'])
 def get_emission_table_by_traj(request):
     if 'city' in request.GET and 'id' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
-        traj = Trajectory.objects.get(id=request.GET['id'])
-        emission_str = HmmEmissionTable.objects.get(city=city, traj=traj).table
-        emission_prob = []
-        for prob in emission_str.split(';'):
-            emission_1d = []
-            for p in prob.split(','):
-                emission_1d.append(float(p))
-            emission_prob.append(emission_1d)
-        return Response(emission_prob)
+        try:
+            city = RoadNetwork.objects.get(id=request.GET['city'])
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            emission_str = HmmEmissionTable.objects.get(city=city, traj=traj).table
+            emission_prob = []
+            for prob in emission_str.split(';'):
+                emission_1d = []
+                for p in prob.split(','):
+                    emission_1d.append(float(p))
+                emission_prob.append(emission_1d)
+            return Response(emission_prob)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -172,24 +194,58 @@ def get_emission_table_by_traj(request):
 @api_view(['GET'])
 def get_transition_table_by_traj(request):
     if 'city' in request.GET and 'id' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
-        traj = Trajectory.objects.get(id=request.GET['id'])
-        transition_str = HmmTransitionTable.objects.get(city=city, traj=traj).table
-        transition_prob = []
-        transition_set = transition_str.split(';')
-        beta = float(transition_set[len(transition_set) - 1])
-        for i in range(len(transition_set) - 1):
-            transition_2d = []
-            for p in transition_set[i].split(','):
-                transition_1d = []
-                for record in p.split(':'):
-                    transition_1d.append(float(record))
-                transition_2d.append(transition_1d)
-            transition_prob.append(transition_2d)
-        return Response({
-            "beta": beta,
-            "prob": transition_prob
-        })
+        try:
+            city = RoadNetwork.objects.get(id=request.GET['city'])
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            transition_str = HmmTransitionTable.objects.get(city=city, traj=traj).table
+            transition_prob = []
+            transition_set = transition_str.split(';')
+            beta = float(transition_set[len(transition_set) - 1])
+            for i in range(len(transition_set) - 1):
+                transition_2d = []
+                for p in transition_set[i].split(','):
+                    transition_1d = []
+                    for record in p.split(':'):
+                        transition_1d.append(float(record))
+                    transition_2d.append(transition_1d)
+                transition_prob.append(transition_2d)
+            return Response({
+                "beta": beta,
+                "prob": transition_prob
+            })
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_hmm_path_by_traj(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        try:
+            city = RoadNetwork.objects.get(id=request.GET['city'])
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            path = HmmPath.objects.get(city=city, traj=traj).path
+            return Response(PathSerializer(path).data)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_hmm_path_index_by_traj(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        try:
+            city = RoadNetwork.objects.get(id=request.GET['city'])
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            path_index_str = HmmPathIndex.objects.get(city=city, traj=traj).index
+            hmm_path_index = []
+            for index in path_index_str.split(','):
+                hmm_path_index.append(index)
+            return Response(hmm_path_index)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

@@ -42,6 +42,30 @@ class HmmTransitionTable(models.Model):
         unique_together = ("city", "traj")
 
 
+class HmmPath(models.Model):
+    city = models.ForeignKey(RoadNetwork)
+    traj = models.ForeignKey(Trajectory)
+    path = models.ForeignKey(Path, null=True)
+
+    def __str__(self):
+        return str(self.path.id)
+
+    class Meta:
+        unique_together = ("city", "traj")
+
+
+class HmmPathIndex(models.Model):
+    city = models.ForeignKey(RoadNetwork)
+    traj = models.ForeignKey(Trajectory)
+    index = models.TextField(max_length=65535, null=True)
+
+    def __str__(self):
+        return str(self.index)
+
+    class Meta:
+        unique_together = ("city", "traj")
+
+
 class Action(models.Model):
     point = models.ForeignKey(Sample)
     road = models.ForeignKey(Road)
