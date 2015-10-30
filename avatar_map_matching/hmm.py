@@ -1,6 +1,7 @@
 import json
 
 from networkx.readwrite import json_graph
+from decimal import Decimal
 
 from shortest_path import *
 
@@ -139,7 +140,7 @@ class HmmMapMatching:
         ini_prob = []
         print "Performing forward propagation..."
         for first in self.emission_prob[0]:
-            ini_prob.append(first)
+            ini_prob.append(Decimal(first))
         self.map_matching_prob.append(ini_prob)
         for t in range(0, len(self.transition_prob)):
             state_prob = []
@@ -148,7 +149,7 @@ class HmmMapMatching:
             for current in self.transition_prob[t]:
                 candidate_prob = []
                 for i in range(0, len(current)):
-                    value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i]
+                    value = Decimal(self.map_matching_prob[t][i]) * Decimal(current[i]) * Decimal(self.emission_prob[t + 1][i])
                     candidate_prob.append(value)
                 state_prob.append(max(candidate_prob))
                 prev_index.append(candidate_prob.index(max(candidate_prob)))
@@ -235,12 +236,12 @@ class HmmMapMatching:
         if 0 in action_set:
             for i in range(len(self.emission_prob[0])):
                 if i == r_index_set[0]:
-                    ini_prob.append(self.emission_prob[0][i] * 1.0)
+                    ini_prob.append(Decimal(self.emission_prob[0][i]) * Decimal(1.0))
                 else:
-                    ini_prob.append(self.emission_prob[0][i] * 0.0)
+                    ini_prob.append(Decimal(self.emission_prob[0][i]) * Decimal(0.0))
         else:
             for first in self.emission_prob[0]:
-                ini_prob.append(first)
+                ini_prob.append(Decimal(first))
         self.map_matching_prob.append(ini_prob)
         for t in range(len(self.transition_prob)):
             state_prob = []
@@ -251,12 +252,12 @@ class HmmMapMatching:
                 for i in range(len(current)):
                     if t in action_set:
                         if i == r_index_set[t]:
-                            print "Fixed"
-                            value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i] * 1.0
+                            # print "Fixed"
+                            value = Decimal(self.map_matching_prob[t][i]) * Decimal(current[i]) * Decimal(self.emission_prob[t + 1][i]) * Decimal(1.0)
                         else:
-                            value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i] * 0.0
+                            value = Decimal(self.map_matching_prob[t][i]) * Decimal(current[i]) * Decimal(self.emission_prob[t + 1][i]) * Decimal(0.0)
                     else:
-                        value = self.map_matching_prob[t][i] * current[i] * self.emission_prob[t + 1][i]
+                        value = Decimal(self.map_matching_prob[t][i]) * Decimal(current[i]) * Decimal(self.emission_prob[t + 1][i])
                     candidate_prob.append(value)
                 state_prob.append(max(candidate_prob))
                 prev_index.append(candidate_prob.index(max(candidate_prob)))

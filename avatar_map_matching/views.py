@@ -179,6 +179,26 @@ def reperform_map_matching(request):
 
 
 @api_view(['GET'])
+def get_candidate_rid_by_traj(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        try:
+            city = RoadNetwork.objects.get(id=request.GET['city'])
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            candidate_str = HmmEmissionTable.objects.get(city=city, traj=traj).candidate
+            candidate_rid = []
+            for rids in candidate_str.split(';'):
+                candidate_1d = []
+                for rid in rids.split(','):
+                    candidate_1d.append(rid)
+                candidate_rid.append(candidate_1d)
+            return Response(candidate_rid)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
 def get_emission_table_by_traj(request):
     if 'city' in request.GET and 'id' in request.GET:
         try:
