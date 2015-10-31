@@ -43,8 +43,6 @@ def generate_synthetic_trajectory(request):
         end = None
         num_edge = 10
         # GPS error around 20m
-        delta_lat = 0.0001
-        delta_lng = 0.0002
         missing_rate = 0.0
         if "sample" in request.GET:
             sample_rate = float(request.GET['sample'])
@@ -54,13 +52,9 @@ def generate_synthetic_trajectory(request):
             end = city.intersections.get(id=request.GET['end'])
         if "edge" in request.GET:
             num_edge = int(request.GET['edge'])
-        if "lat" in request.GET:
-            delta_lat = float(request.GET['lat'])
-        if "lng" in request.GET:
-            delta_lng = float(request.GET['lng'])
         if "miss" in request.GET:
             missing_rate = float(request.GET['miss'])
-        result = synthetic_traj_generator(city, num_traj, num_sample, sample_rate, start, end, num_edge, delta_lat, delta_lng, missing_rate)
+        result = synthetic_traj_generator(city, num_traj, num_sample, sample_rate, start, end, num_edge, missing_rate)
         traj_id = []
         for traj in result[0]:
             traj_id.append(traj.id)

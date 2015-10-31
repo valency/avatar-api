@@ -1,30 +1,32 @@
-import random
+# numpy.random.randint(a, b) will not take b as a value, the range is a~b-1
+from numpy import random
 from datetime import *
 import json
 
 from networkx.readwrite import json_graph
 
 from avatar_map_matching.shortest_path import *
+from avatar_core.geometry import *
 
 
 def time_generator():
     year = 2014
-    month = random.randint(1, 12)
+    month = random.randint(1, 13)
     if month in [1, 3, 5, 7, 8, 10, 12]:
-        day = random.randint(1, 31)
+        day = random.randint(1, 32)
     elif month in [4, 6, 9, 11]:
-        day = random.randint(1, 30)
+        day = random.randint(1, 31)
     else:
-        day = random.randint(1, 28)
-    hour = random.randint(6, 22)
-    minute = random.randint(0, 59)
-    second = random.randint(0, 59)
+        day = random.randint(1, 29)
+    hour = random.randint(6, 23)
+    minute = random.randint(0, 60)
+    second = random.randint(0, 60)
     return datetime(year, month, day, hour, minute, second)
 
 
 def initial_point(ini_road):
     p_set = ini_road.p.all()
-    ini_location = random.randint(0, len(p_set) - 2)
+    ini_location = random.randint(0, len(p_set))
     ini_bias = random.random()
     ini_lat = p_set[ini_location].lat + ini_bias * (p_set[ini_location + 1].lat - p_set[ini_location].lat)
     ini_lng = p_set[ini_location].lng + ini_bias * (p_set[ini_location + 1].lng - p_set[ini_location].lng)
@@ -69,7 +71,7 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
             else:
                 print "Length of road " + str(road.id) + " is " + str(road.length)
                 # Randomly decide the remaining distance of the last road segment
-                remain_dis = random.randint(int(distance) / 2, int(distance))
+                remain_dis = random.randint(int(distance) / 2, int(distance) + 1)
             k = remain_dis / Distance.earth_dist(point, p_set[next_l])
             next_lat = point.lat + k * (p_set[next_l].lat - point.lat)
             next_lng = point.lng + k * (p_set[next_l].lng - point.lng)
@@ -124,14 +126,30 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
     return [next_p, road, location, path_index, next_sec, move_path]
 
 
-def add_noise(point, delta_lat, delta_lng):
-    noised_lat = point.lat + random.gauss(0, delta_lat * 0.5)
-    noised_lng = point.lng + random.gauss(0, delta_lng * 0.5)
+def add_noise(point, road):
+    # Probability density for the Zipf distribution is p(x) = x**-a / zetac(a)
+    a = 1.14991429	# Curve fiting result of real trajectory
+    noise_interval = random.zipf(a)
+    while noise_interval >= 1436:	# Observed largest distance error
+        noise_interval = random.zipf(a)
+    noise_dist = random.random() + (noise_interval - 1)
+    p_location = road.point_location(point)
+    p1 = road.p.all()[p_location]
+    p2 = road.p.all()[p_location + 1]
+    delta_lat = abs(p2.lng - p1.lng) * noise_dist / Distance.earth_dist(p1, p2)
+    delta_lng = abs(p2.lat - p1.lat) * noise_dist / Distance.earth_dist(p1, p2)
+    lat_dir = random.choice((-1, 1))
+    if p2.lng == p1.lng or (p2.lat - p1.lat) / (p2.lng - p1.lng) > 0:
+        noised_lat = point.lat + lat_dir * delta_lat
+        noised_lng = point.lng - lat_dir * delta_lng
+    else:
+        noised_lat = point.lat + lat_dir * delta_lat
+        noised_lng = point.lng + lat_dir * delta_lng
     noised_p = Point(lat=noised_lat, lng=noised_lng)
     return noised_p
 
 
-def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, delta_lat, delta_lng, missing_rate):
+def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, missing_rate):
     print "Building road network graph..."
     graph = json_graph.node_link_graph(json.loads(road_network.graph))
     traj_set = []
@@ -157,7 +175,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 source = end.id
             else:
                 intersections = road_network.intersections.all()
-                source = intersections[random.randint(0, len(intersections) - 1)].id
+                source = intersections[random.randint(0, len(intersections))].id
             # Select the target intersections with the right path length to source
             target_set = []
             path_set = networkx.single_source_shortest_path(graph, source, num_edge)
@@ -165,7 +183,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 if len(path_set[path_index]) == num_edge + 1:
                     target_set.append(path_index)
             # Randomly choose a target along with its path to source
-            target_index = random.randint(0, len(target_set) - 1)
+            target_index = random.randint(0, len(target_set))
             sequence = path_set[target_set[target_index]]
             path = []
             length = 0
@@ -189,7 +207,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             ini_road = road_network.roads.get(id=path[1][ini_r_index])
         ini_p = initial_point(ini_road)
         # Add Gaussian noise to each sample point
-        noised_p = add_noise(ini_p[0], delta_lat, delta_lng)
+        noised_p = add_noise(ini_p[0], ini_road)
         # noised_p = ini_p[0]
         noised_p.save()
         ini_sample = Sample(id=ini_sample_id, p=noised_p, t=ini_time, speed=0, angle=0, occupy=0, src=0)
@@ -227,12 +245,12 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             print "Generating the " + str(current_sample_num + 2) + "th sample..."
             # Generate the next sample
             next_p = next_point(road_network, path, prev_p, prev_road, prev_l, prev_sec, prev_path_index, avg_length)
-            time_interval = sample_rate + random.randint(0, 10)
+            time_interval = sample_rate + random.randint(0, 11)
             next_time = prev_time + timedelta(seconds=time_interval)
             miss = random.random()
             if miss > missing_rate:
                 # Add Gaussian noise to each sample point
-                noised_p = add_noise(next_p[0], delta_lat, delta_lng)
+                noised_p = add_noise(next_p[0], next_p[1])
                 # noised_p = next_p[0]
                 noised_p.save()
                 next_sample_id = str(uuid.uuid4())
