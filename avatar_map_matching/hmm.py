@@ -26,7 +26,8 @@ def find_candidates_from_road(road_network, point):
                         candidates.append(candidate)
                         rids.append(road.id)
         candidates.sort(key=lambda x: x["dist"])
-    print "# of Candidates = " + str(len(candidates))
+    if settings.DEBUG:
+        print "# of Candidates = " + str(len(candidates))
     return candidates
 
 
@@ -47,16 +48,20 @@ class HmmMapMatching:
         prev_p = None
         prev_candidates = None
         rank = int(rank)
-        print "Setting HMM parameters..."
+        if settings.DEBUG:
+            print "Setting HMM parameters..."
         count = 0
         for p in trace.p.all().order_by("t"):
-            print p.id
+            if settins.DEBUG:
+                print p.id
             # Find all candidate points of each point
             candidates = find_candidates_from_road(road_network, p.p)
             # Save the emission distance and rid of each candidates
-            print "Saving emission distance of sample: " + str(count)
+            if settings.DEBUG:
+                print "Saving emission distance of sample: " + str(count)
             if len(candidates) < rank:
-                print "# of candidates is less than rank = " + str(rank) + ", now add dummy values"
+                if settings.DEBUG:
+                    print "# of candidates is less than rank = " + str(rank) + ", now add dummy values"
                 for i in range(len(candidates), rank, 1):
                     candidates.append({
                         "dist": 16777215.0,
@@ -74,7 +79,8 @@ class HmmMapMatching:
             nearest_road = road_network.roads.get(id=candidates[0]["rid"])
             deltas.append(candidates[0]["dist"])
             # Save the transition distance between each two points
-            print "Saving transition distance between sample: " + str(count) + " and previous sample"
+            if settings.DEBUG:
+                print "Saving transition distance between sample: " + str(count) + " and previous sample"
             count += 1
             if prev_p is not None:
                 tran_p = []
@@ -104,7 +110,8 @@ class HmmMapMatching:
                 betas.append(beta_p)
             prev_p = p.p
             prev_candidates = candidates
-        print "Calculating delta and beta..."
+        if settings.DEBUG:
+            print "Calculating delta and beta..."
         deltas.sort()
         betas.sort()
         delta = 1.4826 * deltas[len(deltas) / 2]
@@ -115,15 +122,16 @@ class HmmMapMatching:
         para = self.hmm_parameters(road_network, graph, trace, rank)
         emission_para = 1.0 / (math.sqrt(2 * math.pi) * para['delta'])
         transition_para = 1.0 / para['beta']
-
-        print "Calculating eimission probabilities..."
+        if settings.DEBUG:
+            print "Calculating eimission probabilities..."
         for zt in self.emission_dist:
             prob_t = []
             for xi in zt:
                 exponent = -0.5 * (xi / para['delta']) * (xi / para['delta'])
                 prob_t.append(emission_para * math.exp(exponent))
             self.emission_prob.append(prob_t)
-        print "Calculating transition probabilities..."
+        if settings.DEBUG:
+            print "Calculating transition probabilities..."
         for zt in self.transition_dist:
             prob_dt = []
             for prev_xi in zt:
@@ -138,7 +146,8 @@ class HmmMapMatching:
     def hmm_viterbi_forward(self):
         chosen_index = []
         ini_prob = []
-        print "Performing forward propagation..."
+        if settings.DEBUG:
+            print "Performing forward propagation..."
         for first in self.emission_prob[0]:
             ini_prob.append(Decimal(first))
         self.map_matching_prob.append(ini_prob)
@@ -164,7 +173,8 @@ class HmmMapMatching:
         hmm_path_rids = []
         hmm_path_dist = []
         connect_routes = []
-        print "Performing backward tracing..."
+        if settings.DEBUG:
+            print "Performing backward tracing..."
         final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
         final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
@@ -231,7 +241,8 @@ class HmmMapMatching:
                 r_index_set[p_index] = rank - 1
             else:
                 r_index_set[p_index] = self.candidate_rid[p_index].index(action_set[p_index])
-        print "Performing forward propagation..."
+        if settings.DEBUG:
+            print "Performing forward propagation..."
         # If the first point is chosen, also need to modify its map_matching_prob
         if 0 in action_set:
             for i in range(len(self.emission_prob[0])):
@@ -269,7 +280,8 @@ class HmmMapMatching:
         hmm_path_rids = []
         connect_routes = []
 	hmm_path_dist = []
-        print "Performing backward tracing..."
+        if settings.DEBUG:
+            print "Performing backward tracing..."
         # If the last point needs to tune, since it will not influent any latter choice, just fix the tuned rid
         if len(self.map_matching_prob) - 1 in action_set:
             final_index = r_index_set[len(self.map_matching_prob) - 1]
@@ -299,10 +311,12 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes]
 
     def perform_map_matching(self, road_network, trace, rank):
-        print "Building road network graph..."
+        if settings.DEBUG:
+            print "Building road network graph..."
         graph = json_graph.node_link_graph(json.loads(road_network.graph))
         beta = self.hmm_prob_model(road_network, graph, trace, rank)
-        print "Implementing viterbi algorithm..."
+        if settings.DEBUG:
+            print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(chosen_index)
         hmm_path = Path(id=trace.id)
@@ -343,9 +357,11 @@ class HmmMapMatching:
         return {'path': hmm_path, 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
-        print "Building road network graph..."
+        if settings.DEBUG:
+            print "Building road network graph..."
         graph = json_graph.node_link_graph(json.loads(road_network.graph))
-        print "Reperform map matching with human label..."
+        if settings.DEBUG:
+            print "Reperform map matching with human label..."
         sequence = self.hmm_with_label(road_network, graph, trace, rank, action_list, beta)
         hmm_path = Path(id=trace.id)
         for prev_fragment in hmm_path.road.all():

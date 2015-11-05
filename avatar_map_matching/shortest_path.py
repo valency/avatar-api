@@ -94,7 +94,8 @@ class ShortestPath:
         try:
             index = ShortestPathIndex.objects.get(city=road_network, start=start_sec, end=end_sec)
         except ObjectDoesNotExist:
-            print "Adding shortest path index of intersection " + str(sec1.id) + " and intersection " + str(sec2.id)
+            if settings.DEBUG:
+                print "Adding shortest path index of intersection " + str(sec1.id) + " and intersection " + str(sec2.id)
             # shortest_path = ShortestPath.shortest_path_astar_intersections(road_network, sec1, sec2)
             sequence = networkx.astar_path(graph, sec1.id, sec2.id)
             shortest_path = []
