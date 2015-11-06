@@ -1,5 +1,5 @@
 from django.db import models
-from django.conf import settings
+
 
 class Point(models.Model):
     lat = models.FloatField()

@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from serializers import *
 
@@ -96,5 +96,5 @@ def verify(request):
 def get_all_users(request):
     user_id = []
     for user in Account.objects.all():
-	user_id.append(user.id)
+        user_id.append(user.id)
     return Response(user_id)

@@ -2,7 +2,7 @@ import Queue
 import uuid
 
 import networkx
-
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 from avatar_core.geometry import *

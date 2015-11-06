@@ -1,7 +1,7 @@
 import json
+from decimal import Decimal
 
 from networkx.readwrite import json_graph
-from decimal import Decimal
 
 from shortest_path import *
 
@@ -281,7 +281,7 @@ class HmmMapMatching:
         hmm_path_index = []
         hmm_path_rids = []
         connect_routes = []
-	hmm_path_dist = []
+        hmm_path_dist = []
         if settings.DEBUG:
             print "Performing backward tracing..."
         # If the last point needs to tune, since it will not influent any latter choice, just fix the tuned rid

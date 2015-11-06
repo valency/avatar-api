@@ -1,11 +1,10 @@
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
 from avatar_core.serializers import *
 from hmm import *
 from models import *
-import uuid
 
 
 @api_view(['GET'])
@@ -49,10 +48,10 @@ def map_matching(request):
             pass
         uuid_id = str(uuid.uuid4())
         new_path = Path(id=uuid_id)
-	new_path.save()
-	for path_fragment in path.road.all():
-	    new_path.road.add(path_fragment)
-	new_path.save()
+        new_path.save()
+        for path_fragment in path.road.all():
+            new_path.road.add(path_fragment)
+        new_path.save()
         hmm_path = HmmPath(city=city, traj=traj, path=new_path)
         hmm_path.save()
         # Save the emission table
@@ -166,7 +165,7 @@ def reperform_map_matching(request):
                 transition_2d.append(transition_1d)
             transition_prob.append(transition_2d)
         hmm = HmmMapMatching()
-	hmm.candidate_rid = candidate_rid
+        hmm.candidate_rid = candidate_rid
         hmm.emission_prob = emission_prob
         hmm.transition_prob = transition_prob
         hmm_result = hmm.reperform_map_matching(city, traj.trace, candidate_rank, action_list, beta)

@@ -1,26 +1,23 @@
-import uuid
 import csv
 import json
+import uuid
 from datetime import datetime
 
 import networkx
-
+from celery.result import AsyncResult
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Max, Min
-from django.core.exceptions import ObjectDoesNotExist
-
+from networkx.readwrite import json_graph
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import viewsets, status
 
-from celery.result import AsyncResult
-
-from networkx.readwrite import json_graph
-
-from serializers import *
 from geometry import *
+from serializers import *
 
-CSV_UPLOAD_DIR = "/var/www/html/avatar/data/"
+MAP_UPLOAD_DIR = "/var/www/html/avatar/data/map/"
+TRAJ_UPLOAD_DIR = "/var/www/html/avatar/data/trajectory/"
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
@@ -58,7 +55,7 @@ def add_traj_from_local_file(request):
         try:
             ids = []
             traj = None
-            with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
+            with open(TRAJ_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
                 line_count = 0
                 for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
@@ -126,7 +123,7 @@ def create_road_network_from_local_file(request):
             city = request.GET["city"]
             road_network = RoadNetwork(city=city)
             road_network.save()
-            with open(CSV_UPLOAD_DIR + request.GET["src"]) as csv_file:
+            with open(MAP_UPLOAD_DIR + request.GET["src"]) as csv_file:
                 reader = csv.DictReader(csv_file)
                 road = None
                 line_count = 0

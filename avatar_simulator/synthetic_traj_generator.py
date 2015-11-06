@@ -1,11 +1,10 @@
+import json
 import random
 from datetime import *
-import json
 
 from networkx.readwrite import json_graph
 
 from avatar_map_matching.shortest_path import *
-from avatar_core.geometry import *
 
 
 def time_generator():
@@ -76,7 +75,6 @@ def travel_direction(road, sec):
     else:
         print "Input intersection not on input road!"
         raise IOError
-        return 0
 
 
 def next_point(road_network, path, point, road, location, next_sec, path_index, distance):
@@ -131,22 +129,22 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                 # Skip the road containing only one point
                 while len(road.p.all()) < 2:
                     path_index += 1
-                    road = road_network.roads.get(id=path[1][ini_r_index])
+                    road = road_network.roads.get(id=path[1][path_index])
                 move_path.append(road.id)
                 p_set = road.p.all()
-		connected = 0
-		temp_sec = None
+                connected = 0
+                temp_sec = None
                 for sec in road.intersection.all():
                     if settings.DEBUG:
-		        print sec.id + ":" + str(sec.p.lat) + "," + str(sec.p.lng)
+                        print sec.id + ":" + str(sec.p.lat) + "," + str(sec.p.lng)
                     if sec.p.lat == next_sec.p.lat and sec.p.lng == next_sec.p.lng:
                         connected = 1
-		    else:
+                    else:
                         temp_sec = sec
-		if connected == 0:
-		    print "Next road is not connected with previous road!"
+                if connected == 0:
+                    print "Next road is not connected with previous road!"
                     raise IOError
-		next_sec = temp_sec
+                next_sec = temp_sec
                 d = travel_direction(road, next_sec)
                 if settings.DEBUG:
                     print d
@@ -154,8 +152,8 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                     next_l = 1
                 elif d == -1:
                     next_l = len(p_set) - 2
-		else:
-		    print "Something is wrong while calculating direction!"
+                else:
+                    print "Something is wrong while calculating direction!"
                     raise IOError
                 if settings.DEBUG:
                     print "Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d].lat) + "," + str(p_set[next_l - d].lng) + ") on road " + str(road.id) + "..."
@@ -176,9 +174,9 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
 
 
 def add_noise(point, road, shake):
-    delta = 33.6833599047	# Distribution parameter from real dataset
+    delta = 33.6833599047  # Distribution parameter from real dataset
     noise_dist = random.gauss(0, delta * shake)
-    while noise_dist >= 1436:	# Observed largest distance error
+    while noise_dist >= 1436:  # Observed largest distance error
         noise_dist = abs(random.gauss(0, delta + shake))
     p_location = road.point_location(point)
     p1 = road.p.all()[p_location]
@@ -202,11 +200,11 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
     graph = json_graph.node_link_graph(json.loads(road_network.graph))
     traj_set = []
     ground_truth = []
+    path_len = []
     for i in range(num_traj):
         if settings.DEBUG:
             print "Generating the " + str(i + 1) + "th trajectory..."
         traj_rids = []
-        path_len = []
         # Generate trajectory information
         taxi_id = str(uuid.uuid4())
         trace_id = str(uuid.uuid4())
@@ -224,7 +222,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             print "Generating the first sample..."
         ini_sample_id = str(uuid.uuid4())
         ini_time = time_generator()
-	ini_r_index = 0
+        ini_r_index = 0
         ini_road = road_network.roads.get(id=path[1][ini_r_index])
         # Skip the road containing only one point
         while len(ini_road.p.all()) < 2:
@@ -243,7 +241,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         prev_p = ini_p[0]
         prev_road = ini_road
         prev_secset = prev_road.intersection.all()
-	second_r_index = ini_r_index + 1
+        second_r_index = ini_r_index + 1
         second_road = road_network.roads.get(id=path[1][ini_r_index + 1])
         # Skip the road containing only one point
         while len(second_road.p.all()) < 2:
@@ -256,8 +254,8 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         elif prev_secset[1].id == second_secset[0].id or prev_secset[1].id == second_secset[1].id:
             ini_sec = prev_secset[0]
             prev_sec = prev_secset[1]
-	else:
-	    "First road is not connected with second road!"
+        else:
+            "First road is not connected with second road!"
             raise IOError
         d = travel_direction(prev_road, prev_sec)
         prev_l = ini_p[1]
