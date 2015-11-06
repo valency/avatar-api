@@ -63,7 +63,8 @@ def generate_synthetic_trajectory(request):
         print "Finished!"
         return Response({
             "traj_id": traj_id,
-            "ground_truth": result[1]
+            "ground_truth": result[1],
+            "path_length": result[2]
         })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -52,7 +52,7 @@ class HmmMapMatching:
             print "Setting HMM parameters..."
         count = 0
         for p in trace.p.all().order_by("t"):
-            if settins.DEBUG:
+            if settings.DEBUG:
                 print p.id
             # Find all candidate points of each point
             candidates = find_candidates_from_road(road_network, p.p)
@@ -179,9 +179,10 @@ class HmmMapMatching:
         final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
         final_dist = self.emission_dist[len(self.candidate_rid) - 1][final_index]
-        print final_prob
-        print final_index
-        print final_rid
+        if settings.DEBUG:
+            print final_prob
+            print final_index
+            print final_rid
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
@@ -211,7 +212,8 @@ class HmmMapMatching:
             for i in range(len(p_list)):
                 if p_list[i].id == action.point.id:
                     action_set[i] = action.road.id
-        print action_set
+        if settings.DEBUG:
+            print action_set
         # candidate_map = []
         chosen_index = []
         ini_prob = []
@@ -329,7 +331,8 @@ class HmmMapMatching:
         p_index = []
         for i in range(0, len(sequence[0])):
             if i > 0:
-                print sequence[0][i] == sequence[1][i - 1][-1]
+                if settings.DEBUG:
+                    print sequence[0][i] == sequence[1][i - 1][-1]
             if i > 0 and len(sequence[1][i - 1]) > 1:
                 path_fragment.p = ','.join(map(str, p_index))
                 path_fragment.save()
@@ -351,9 +354,11 @@ class HmmMapMatching:
         hmm_path.road.add(path_fragment)
         hmm_path.save()
         for fragment in hmm_path.road.all():
-            print fragment.p
+            if settings.DEBUG:
+                print fragment.p
             for sec in fragment.road.intersection.all():
-                print sec.id
+                if settings.DEBUG:
+                    print sec.id
         return {'path': hmm_path, 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta, 'dist': sequence[2]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_list, beta):

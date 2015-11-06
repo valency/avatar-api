@@ -177,7 +177,7 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
 
 def add_noise(point, road, shake):
     delta = 33.6833599047	# Distribution parameter from real dataset
-    noise_dist = random.gauss(0, delta + shake)
+    noise_dist = random.gauss(0, delta * shake)
     while noise_dist >= 1436:	# Observed largest distance error
         noise_dist = abs(random.gauss(0, delta + shake))
     p_location = road.point_location(point)
@@ -206,6 +206,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         if settings.DEBUG:
             print "Generating the " + str(i + 1) + "th trajectory..."
         traj_rids = []
+        path_len = []
         # Generate trajectory information
         taxi_id = str(uuid.uuid4())
         trace_id = str(uuid.uuid4())
@@ -302,5 +303,6 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             prev_path_index = next_p[3]
             prev_sec = next_p[4]
         traj_set.append(traj)
+        path_len.append(path[0])
         ground_truth.append(traj_rids)
-    return [traj_set, ground_truth]
+    return [traj_set, ground_truth, path_len]
