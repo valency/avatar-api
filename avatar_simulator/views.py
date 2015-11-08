@@ -41,8 +41,8 @@ def generate_synthetic_trajectory(request):
         sample_rate = 60
         start = None
         end = None
-        num_edge = 10
-        shake = 0.0
+        num_edge = num_sample
+        shake = 1.0
         missing_rate = 0.0
         if "sample" in request.GET:
             sample_rate = float(request.GET['sample'])
