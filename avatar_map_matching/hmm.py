@@ -115,13 +115,23 @@ class HmmMapMatching:
         deltas.sort()
         betas.sort()
         delta = 1.4826 * deltas[len(deltas) / 2]
+        if delta == 0.0:
+            delta = 1.4826 * (sum(deltas) / float(len(deltas)))
         beta = betas[len(betas) / 2] / 0.69314718
+        if beta == 0.0:
+            beta = (sum(betas) / float(len(betas))) / 0.69314718
         return {'delta': delta, 'beta': beta}
 
     def hmm_prob_model(self, road_network, graph, trace, rank):
         para = self.hmm_parameters(road_network, graph, trace, rank)
-        emission_para = 1.0 / (math.sqrt(2 * math.pi) * para['delta'])
-        transition_para = 1.0 / para['beta']
+        if para['delta'] != 0.0:
+            emission_para = 1.0 / (math.sqrt(2 * math.pi) * para['delta'])
+        else:
+            emission_para = float("Inf")
+        if para['beta'] != 0.0:
+            transition_para = 1.0 / para['beta']
+        else:
+            transition_para = float("Inf")
         if settings.DEBUG:
             print "Calculating eimission probabilities..."
         for zt in self.emission_dist:

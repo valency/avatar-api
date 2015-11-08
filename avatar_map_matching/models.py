@@ -7,7 +7,7 @@ class ShortestPathIndex(models.Model):
     city = models.ForeignKey(RoadNetwork)
     start = models.ForeignKey(Intersection, related_name="start")
     end = models.ForeignKey(Intersection, related_name="end")
-    path = models.ForeignKey(Path)
+    path = models.ForeignKey(Path, null=True)
     length = models.IntegerField(null=True)
 
     def __str__(self):

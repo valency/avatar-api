@@ -2,6 +2,7 @@ import Queue
 import uuid
 
 import networkx
+from networkx import NetworkXNoPath
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -97,34 +98,40 @@ class ShortestPath:
             if settings.DEBUG:
                 print "Adding shortest path index of intersection " + str(sec1.id) + " and intersection " + str(sec2.id)
             # shortest_path = ShortestPath.shortest_path_astar_intersections(road_network, sec1, sec2)
-            sequence = networkx.astar_path(graph, sec1.id, sec2.id)
-            shortest_path = []
-            length = 0
-            for i in range(len(sequence) - 1):
-                rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
-                shortest_path.append(rid)
-                length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
+            try:
+                sequence = networkx.astar_path(graph, sec1.id, sec2.id)
+                shortest_path = []
+                length = 0
+                for i in range(len(sequence) - 1):
+                    rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
+                    shortest_path.append(rid)
+                    length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
+                if sec1.id > sec2.id:
+                    # shortest_path[1].reverse()
+                    shortest_path.reverse()
+                uuid_id = str(uuid.uuid4())
+                path = Path(id=uuid_id)
+                path.save()
+                # for rid in shortest_path[1]:
+                for rid in shortest_path:
+                    road = road_network.roads.get(id=rid)
+                    path_fragment = PathFragment(road=road)
+                    path_fragment.save()
+                    path.road.add(path_fragment)
+                path.save()
+                # index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=shortest_path[0])
+                index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=length)
+                index.save()
+            except NetworkXNoPath:
+                index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=None, length=16777215.0)
+        if index.path is not None:
+            rids = []
+            for segment in index.path.road.all():
+                rids.append(segment.road.id)
             if sec1.id > sec2.id:
-                # shortest_path[1].reverse()
-                shortest_path.reverse()
-            uuid_id = str(uuid.uuid4())
-            path = Path(id=uuid_id)
-            path.save()
-            # for rid in shortest_path[1]:
-            for rid in shortest_path:
-                road = road_network.roads.get(id=rid)
-                path_fragment = PathFragment(road=road)
-                path_fragment.save()
-                path.road.add(path_fragment)
-            path.save()
-            # index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=shortest_path[0])
-            index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=length)
-            index.save()
-        rids = []
-        for segment in index.path.road.all():
-            rids.append(segment.road.id)
-        if sec1.id > sec2.id:
-            rids.reverse()
+                rids.reverse()
+        else:
+            rids = None
         return [index.length, rids]
 
     @staticmethod
@@ -153,4 +160,8 @@ class ShortestPath:
             path = ShortestPath.check_shortest_path_from_db(road_network, graph, intersec1[id1], intersec2[id2])
             dis1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1].p, road1))
             dis2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2].p, road2))
-            return path[0] + dis1 + dis2, [road1.id] + path[1] + [road2.id]
+            if path[1] is not None:
+                path_with_end = [road1.id] + path[1] + [road2.id]
+            else:
+                path_with_end = None
+            return path[0] + dis1 + dis2, path_with_end
