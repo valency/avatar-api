@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from decimal import Decimal
 
 from avatar_core.serializers import *
 from hmm import *
@@ -208,7 +209,7 @@ def get_emission_table_by_traj(request):
             for prob in emission_str.split(';'):
                 emission_1d = []
                 for p in prob.split(','):
-                    emission_1d.append(float(p))
+                    emission_1d.append(Decimal(p))
                 emission_prob.append(emission_1d)
             return Response(emission_prob)
         except ObjectDoesNotExist:
@@ -232,7 +233,7 @@ def get_transition_table_by_traj(request):
                 for p in transition_set[i].split(','):
                     transition_1d = []
                     for record in p.split(':'):
-                        transition_1d.append(float(record))
+                        transition_1d.append(Decimal(record))
                     transition_2d.append(transition_1d)
                 transition_prob.append(transition_2d)
             return Response({
