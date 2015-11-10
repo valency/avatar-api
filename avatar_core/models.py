@@ -52,7 +52,7 @@ class Road(models.Model):
         return self.id
 
     def point_location(self, p):
-        all_p = self.p.all()
+        all_p = list(self.p.all())
         for i in range(len(all_p) - 1):
             p1 = all_p[i]
             p2 = all_p[i + 1]
@@ -105,7 +105,7 @@ class Rect(models.Model):
         return "(" + str(self.lat) + "," + str(self.lng) + "," + str(self.height) + "," + str(self.width) + ")"
 
     def contains_road(self, road):
-        for p in road.p.all():
+        for p in list(road.p.all()):
             if self.contains_road_point(p):
                 return True
         return False

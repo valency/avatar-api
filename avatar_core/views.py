@@ -332,7 +332,7 @@ def create_grid_index_by_road_network_id(request):
         unit_lat = (maxp.lat - minp.lat) / grid_count
         unit_lng = (maxp.lng - minp.lng) / grid_count
         for road in road_network.roads.all():
-            for p in road.p.all():
+            for p in list(road.p.all()):
                 i = int((p.lat - minp.lat) / unit_lat)
                 if i > grid_count - 1:
                     i = grid_count - 1

@@ -46,7 +46,7 @@ class Distance:
         dist = 16777215.0
         mapped_p = None
         location = 0
-        p_set = road.p.all()
+        p_set = list(road.p.all())
         for i in range(0, len(p_set) - 1):
             p1 = p_set[i]
             p2 = p_set[i + 1]
@@ -60,7 +60,7 @@ class Distance:
     @staticmethod
     # route distance between the query point and the first point of the road
     def length_to_start(p, road):
-        all_p = road.p.all()
+        all_p = list(road.p.all())
         location = road.point_location(p)
         length_p = 0.0
         for i in range(0, location):
@@ -70,7 +70,7 @@ class Distance:
 
     @staticmethod
     def road_length(road):
-        all_p = road.p.all()
+        all_p = list(road.p.all())
         length = 0.0
         for i in range(len(all_p) - 1):
             length += Distance.earth_dist(all_p[i], all_p[i + 1])

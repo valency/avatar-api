@@ -28,8 +28,6 @@ def shortest_path_generator(road_network, graph, start, end, num_edge):
     else:
         if start is not None:
             source = start.id
-        elif end is not None:
-            source = end.id
         else:
             intersections = road_network.intersections.all()
             source = intersections[random.randint(0, len(intersections)) - 1].id
@@ -39,6 +37,8 @@ def shortest_path_generator(road_network, graph, start, end, num_edge):
         for path_index in path_set:
             if len(path_set[path_index]) == num_edge + 1:
                 target_set.append(path_index)
+        if settings.DEBUG:
+            print "There are " + str(len(target_set)) + " trajectories to choose from..."
         # Randomly choose a target along with its path to source
         target_index = random.randint(0, len(target_set) - 1)
         sequence = path_set[target_set[target_index]]
@@ -49,13 +49,11 @@ def shortest_path_generator(road_network, graph, start, end, num_edge):
             path.append(rid)
             length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
         path = [length, path]
-        if start is None:
-            path[1].reverse()
-    return path
+    return path, target_set[target_index]
 
 
 def initial_point(ini_road):
-    p_set = ini_road.p.all()
+    p_set = list(ini_road.p.all())
     ini_location = random.randint(0, len(p_set) - 2)
     ini_bias = random.random()
     ini_lat = p_set[ini_location].lat + ini_bias * (p_set[ini_location + 1].lat - p_set[ini_location].lat)
@@ -68,9 +66,9 @@ def initial_point(ini_road):
 
 
 def travel_direction(road, sec):
-    if sec.p.lat == road.p.all()[0].lat and sec.p.lng == road.p.all()[0].lng:
+    if sec.p.lat == list(road.p.all())[0].lat and sec.p.lng == list(road.p.all())[0].lng:
         return -1
-    elif sec.p.lat == road.p.all()[len(road.p.all()) - 1].lat and sec.p.lng == road.p.all()[len(road.p.all()) - 1].lng:
+    elif sec.p.lat == list(road.p.all())[len(list(road.p.all())) - 1].lat and sec.p.lng == list(road.p.all())[len(list(road.p.all())) - 1].lng:
         return 1
     else:
         print "Input intersection not on input road!"
@@ -79,7 +77,7 @@ def travel_direction(road, sec):
 
 def next_point(road_network, path, point, road, location, next_sec, path_index, distance):
     move_path = [road.id]
-    p_set = road.p.all()
+    p_set = list(road.p.all())
     d = travel_direction(road, next_sec)
     next_l = location + int(0.5 * d + 0.5)
     if (road.length / (len(p_set) - 1)) > distance:
@@ -127,11 +125,11 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                 rid = path[1][path_index]
                 road = road_network.roads.get(id=rid)
                 # Skip the road containing only one point
-                while len(road.p.all()) < 2:
+                while len(list(road.p.all())) < 2:
                     path_index += 1
                     road = road_network.roads.get(id=path[1][path_index])
                 move_path.append(road.id)
-                p_set = road.p.all()
+                p_set = list(road.p.all())
                 connected = 0
                 temp_sec = None
                 for sec in road.intersection.all():
@@ -179,8 +177,8 @@ def add_noise(point, road, shake):
     while noise_dist >= 1436:  # Observed largest distance error
         noise_dist = abs(random.gauss(0, delta + shake))
     p_location = road.point_location(point)
-    p1 = road.p.all()[p_location]
-    p2 = road.p.all()[p_location + 1]
+    p1 = list(road.p.all())[p_location]
+    p2 = list(road.p.all())[p_location + 1]
     delta_lat = abs(p2.lng - p1.lng) * noise_dist / Distance.earth_dist(p1, p2)
     delta_lng = abs(p2.lat - p1.lat) * noise_dist / Distance.earth_dist(p1, p2)
     lat_dir = random.choice((-1, 1))
@@ -214,9 +212,24 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         traj = Trajectory(id=traj_id, taxi=taxi_id, trace=trace)
         traj.save()
         # Generate a shortest path
-        path = shortest_path_generator(road_network, graph, start, end, num_edge)
-        while "shenzhen-2602-1" in path[1]:
-            path = shortest_path_generator(road_network, graph, start, end, num_edge)
+        path = [0, []]
+        remain_num_edge = num_edge
+        while remain_num_edge > 0:
+            if remain_num_edge <= 50 or start is not None and end is not None:
+                sub_path, target = shortest_path_generator(road_network, graph, start, end, remain_num_edge)
+                remain_num_edge = 0
+            # If the number of edges is too large, divide the generation process
+            else:
+                sub_path, target = shortest_path_generator(road_network, graph, start, end, 50)
+                # Make sure the path does not turn around
+                while len(path[1]) > 0 and sub_path[1][0] == path[1][len(path[1]) - 1]:
+                    sub_path, target = shortest_path_generator(road_network, graph, start, end, 50)
+                start = road_network.intersections.get(id=target)
+                remain_num_edge -= 50
+            path[0] += sub_path[0]
+            path[1] += sub_path[1]
+        if start is None and end is not None:
+            path.reverse()
         # Generate the first sample
         if settings.DEBUG:
             print "Generating the first sample..."
@@ -225,7 +238,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ini_r_index = 0
         ini_road = road_network.roads.get(id=path[1][ini_r_index])
         # Skip the road containing only one point
-        while len(ini_road.p.all()) < 2:
+        while len(list(ini_road.p.all())) < 2:
             ini_r_index += 1
             ini_road = road_network.roads.get(id=path[1][ini_r_index])
         ini_p = initial_point(ini_road)
@@ -244,7 +257,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         second_r_index = ini_r_index + 1
         second_road = road_network.roads.get(id=path[1][ini_r_index + 1])
         # Skip the road containing only one point
-        while len(second_road.p.all()) < 2:
+        while len(list(second_road.p.all())) < 2:
             second_r_index += 1
             second_road = road_network.roads.get(id=path[1][second_r_index])
         second_secset = second_road.intersection.all()
@@ -303,4 +316,6 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         traj_set.append(traj)
         path_len.append(path[0])
         ground_truth.append(traj_rids)
+        if settings.DEBUG:
+            print path
     return [traj_set, ground_truth, path_len]

@@ -26,8 +26,8 @@ class ShortestPath:
             p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross, road2))
             return p1_cross + p2_cross
         else:
-            p1_set = road1.p.all()
-            p2_set = road2.p.all()
+            p1_set = list(road1.p.all())
+            p2_set = list(road2.p.all())
             if Angle.intersection_angle(p2, p1, p1_set[0], p1_set[len(p1_set) - 1]) <= 90:
                 p1_cross = Distance.earth_dist(p1, p1_set[0])
                 cross1 = p1_set[0]
