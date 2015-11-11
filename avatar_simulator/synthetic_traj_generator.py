@@ -22,9 +22,10 @@ def time_generator():
     return datetime(year, month, day, hour, minute, second)
 
 
-def shortest_path_generator(road_network, graph, start, end, num_edge):
+def shortest_path_generator(road_network, graph, start, end, num_edge, prev_rid):
     if start is not None and end is not None:
         path = ShortestPath.check_shortest_path_from_db(road_network, graph, start, end)
+        target = None
     else:
         if start is not None:
             source = start.id
@@ -36,20 +37,28 @@ def shortest_path_generator(road_network, graph, start, end, num_edge):
         path_set = networkx.single_source_shortest_path(graph, source, num_edge)
         for path_index in path_set:
             if len(path_set[path_index]) == num_edge + 1:
-                target_set.append(path_index)
+                sequence = path_set[path_index]
+                rid = graph.get_edge_data(sequence[0], sequence[1])["id"]
+                if prev_rid is None or rid != prev_rid:
+                    target_set.append(path_index)
         if settings.DEBUG:
             print "There are " + str(len(target_set)) + " trajectories to choose from..."
+        if len(target_set) == 0:
+            path = None
+            target = None
         # Randomly choose a target along with its path to source
-        target_index = random.randint(0, len(target_set) - 1)
-        sequence = path_set[target_set[target_index]]
-        path = []
-        length = 0
-        for i in range(len(sequence) - 1):
-            rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
-            path.append(rid)
-            length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
-        path = [length, path]
-    return path, target_set[target_index]
+        else:
+            target_index = random.randint(0, len(target_set) - 1)
+            sequence = path_set[target_set[target_index]]
+            path = []
+            length = 0
+            for i in range(len(sequence) - 1):
+                rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
+                path.append(rid)
+                length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
+            path = [length, path]
+            target = target_set[target_index]
+    return path, target
 
 
 def initial_point(ini_road):
@@ -211,23 +220,62 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         traj_id = str(uuid.uuid4())
         traj = Trajectory(id=traj_id, taxi=taxi_id, trace=trace)
         traj.save()
+        # Save the initial start, in case the shortest path generation restart
+        ini_start = start
         # Generate a shortest path
         path = [0, []]
         remain_num_edge = num_edge
+        prev_rid = None
         while remain_num_edge > 0:
+            rebuild = False
             if remain_num_edge <= 50 or start is not None and end is not None:
-                sub_path, target = shortest_path_generator(road_network, graph, start, end, remain_num_edge)
-                remain_num_edge = 0
+                sub_path, target = shortest_path_generator(road_network, graph, start, end, remain_num_edge, prev_rid)
+                if sub_path is None:
+                    rebuild = True
+                else:
+                    remain_num_edge = 0
+                    path[0] += sub_path[0]
+                    path[1] += sub_path[1]
             # If the number of edges is too large, divide the generation process
             else:
-                sub_path, target = shortest_path_generator(road_network, graph, start, end, 50)
-                # Make sure the path does not turn around
-                while len(path[1]) > 0 and sub_path[1][0] == path[1][len(path[1]) - 1]:
-                    sub_path, target = shortest_path_generator(road_network, graph, start, end, 50)
-                start = road_network.intersections.get(id=target)
-                remain_num_edge -= 50
-            path[0] += sub_path[0]
-            path[1] += sub_path[1]
+                # Check if there is no other road to travel, if so, restart to generate a shortest path
+                if start is None:
+                    sub_path, target = shortest_path_generator(road_network, graph, start, end, 50, prev_rid)
+                    if sub_path is None:
+                        rebuild = True
+                    else:
+                        start = road_network.intersections.get(id=target)
+                        remain_num_edge -= 50
+                        path[0] += sub_path[0]
+                        path[1] += sub_path[1]
+                        prev_rid = path[1][len(path[1]) - 1]
+                else:
+                    road_set = road_network.roads.filter(intersection__id__exact=start.id)
+                    if settings.DEBUG:
+                        print road_set
+                    if len(road_set) == 1:
+                        rebuild = True
+                        if settings.DEBUG:
+                            print "The shortest path has to turn around, aborting..."
+                    # Make sure the path does not turn around
+                    else:
+                        sub_path, target = shortest_path_generator(road_network, graph, start, end, 50, prev_rid)
+                        if sub_path is None:
+                            rebuild = True
+                        else:
+                            if sub_path[1][0] == path[1][len(path[1]) - 1]:
+                                print "Wrong path selected!"
+                                raise IOError
+                            start = road_network.intersections.get(id=target)
+                            remain_num_edge -= 50
+                            path[0] += sub_path[0]
+                            path[1] += sub_path[1]
+                            prev_rid = path[1][len(path[1]) - 1]
+            if rebuild:
+                path = [0, []]
+                remain_num_edge = num_edge
+                start = ini_start
+                prev_rid = None
         if start is None and end is not None:
             path.reverse()
         # Generate the first sample
