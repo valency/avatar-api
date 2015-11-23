@@ -51,15 +51,6 @@ class Road(models.Model):
     def __str__(self):
         return self.id
 
-    def point_location(self, p):
-        all_p = list(self.p.all())
-        for i in range(len(all_p) - 1):
-            p1 = all_p[i]
-            p2 = all_p[i + 1]
-            if min(p1.lat, p2.lat) <= p.lat <= max(p1.lat, p2.lat) or min(p1.lng, p2.lng) <= p.lng <= max(p1.lng, p2.lng):
-                return i
-        return None
-
 
 class Trace(models.Model):
     id = models.CharField(max_length=36, primary_key=True)

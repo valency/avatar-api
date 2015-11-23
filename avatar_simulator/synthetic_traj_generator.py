@@ -5,6 +5,7 @@ from datetime import *
 from networkx.readwrite import json_graph
 
 from avatar_map_matching.shortest_path import *
+from avatar_core.serializers import *
 
 
 def time_generator():
@@ -102,7 +103,9 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
         if settings.DEBUG:
             print "Current location is (" + str(point.lat) + "," + str(point.lng) + ")..."
         # Will not reach the next shape point
-        if distance <= Distance.earth_dist(point, p_set[next_l]):
+        point_dict = PointSerializer(point).data
+        next_p_dict = PointSerializer(p_set[next_l]).data
+        if distance <= Distance.earth_dist(point_dict, next_p_dict):
             if settings.DEBUG:
                 print "Will not reach the next shape point..."
             if long_seg == 1:
@@ -115,14 +118,18 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                     print "Length of road " + str(road.id) + " is " + str(road.length)
                 # Randomly decide the remaining distance of the last road segment
                 remain_dis = random.randint(int(distance) / 2, int(distance))
-            k = remain_dis / Distance.earth_dist(point, p_set[next_l])
+            point_dict = PointSerializer(point).data
+            next_p_dict = PointSerializer(p_set[next_l]).data
+            k = remain_dis / Distance.earth_dist(point_dict, next_p_dict)
             next_lat = point.lat + k * (p_set[next_l].lat - point.lat)
             next_lng = point.lng + k * (p_set[next_l].lng - point.lng)
             distance = 0
             if settings.DEBUG:
                 print "Finally stays between " + str(location) + "th shape point(" + str(p_set[location].lat) + "," + str(p_set[location].lng) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
         else:
-            distance -= Distance.earth_dist(point, p_set[next_l])
+            point_dict = PointSerializer(point).data
+            next_p_dict = PointSerializer(p_set[next_l]).data
+            distance -= Distance.earth_dist(point_dict, next_p_dict)
             point = p_set[next_l]
             if settings.DEBUG:
                 print "The location of next intersection is (" + str(next_sec.p.lat) + "," + str(next_sec.p.lng) + ")"
@@ -174,7 +181,10 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
     next_p = Point(lat=next_lat, lng=next_lng)
     if settings.DEBUG:
         print "Point location is (" + str(next_p.lat) + "," + str(next_p.lng) + ")"
-    dis_to_go = abs(Distance.length_to_start(next_p, road) - Distance.length_to_start(next_sec.p, road))
+    next_p_dict = PointSerializer(next_p).data
+    next_sec_dict = PointSerializer(next_sec.p).data
+    road_dict = RoadSerializer(road).data
+    dis_to_go = abs(Distance.length_to_start(next_p_dict, road_dict) - Distance.length_to_start(next_sec_dict, road_dict))
     if settings.DEBUG:
         print "Remaining distance on this road is " + str(dis_to_go)
     return [next_p, road, location, path_index, next_sec, move_path]
@@ -185,11 +195,15 @@ def add_noise(point, road, shake):
     noise_dist = random.gauss(0, delta * shake)
     while noise_dist >= 1436:  # Observed largest distance error
         noise_dist = abs(random.gauss(0, delta + shake))
-    p_location = road.point_location(point)
+    r_dict = RoadSerializer(road).data
+    p_dict = PointSerializer(point).data
+    p_location = Distance.point_location(p_dict, r_dict)
     p1 = list(road.p.all())[p_location]
     p2 = list(road.p.all())[p_location + 1]
-    delta_lat = abs(p2.lng - p1.lng) * noise_dist / Distance.earth_dist(p1, p2)
-    delta_lng = abs(p2.lat - p1.lat) * noise_dist / Distance.earth_dist(p1, p2)
+    p1_dict = PointSerializer(p1).data
+    p2_dict = PointSerializer(p2).data
+    delta_lat = abs(p2.lng - p1.lng) * noise_dist / Distance.earth_dist(p1_dict, p2_dict)
+    delta_lng = abs(p2.lat - p1.lat) * noise_dist / Distance.earth_dist(p1_dict, p2_dict)
     lat_dir = random.choice((-1, 1))
     if p2.lng == p1.lng or (p2.lat - p1.lat) / (p2.lng - p1.lng) > 0:
         noised_lat = point.lat + lat_dir * delta_lat
@@ -322,7 +336,10 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         prev_l = ini_p[1]
         prev_path_index = 0
         prev_time = ini_time
-        ini_dis = abs(Distance.length_to_start(ini_p[0], ini_road) - Distance.length_to_start(ini_sec.p, ini_road))
+        ini_p_dict = PointSerializer(ini_p[0]).data
+        ini_sec_dict = PointSerializer(ini_sec.p).data
+        ini_road_dict = RoadSerializer(ini_road).data
+        ini_dis = abs(Distance.length_to_start(ini_p_dict, ini_road_dict) - Distance.length_to_start(ini_sec_dict, ini_road_dict))
         avg_length = int((path[0] - ini_dis) / (num_sample - 1))
         if settings.DEBUG:
             print "Average length between each two sample is " + str(avg_length)

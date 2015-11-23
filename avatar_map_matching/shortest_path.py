@@ -89,79 +89,58 @@ class ShortestPath:
         return [pathlen, path]
 
     @staticmethod
-    def check_shortest_path_from_db(road_network, graph, sec1, sec2):
-        start_sec = sec1 if sec1.id < sec2.id else sec2
-        end_sec = sec2 if sec1.id < sec2.id else sec1
-        try:
-            index = ShortestPathIndex.objects.get(city=road_network, start=start_sec, end=end_sec)
-        except ObjectDoesNotExist:
-            if settings.DEBUG:
-                print "Adding shortest path index of intersection " + str(sec1.id) + " and intersection " + str(sec2.id)
-            # shortest_path = ShortestPath.shortest_path_astar_intersections(road_network, sec1, sec2)
+    def check_shortest_path_from_db(road_network, graph, sec1, sec2, path_dict, check):
+        start_sec = sec1 if sec1["id"] < sec2["id"] else sec2
+        end_sec = sec2 if sec1["id"] < sec2["id"] else sec1
+        # shortest_path = ShortestPath.shortest_path_astar_intersections(road_network, sec1, sec2)
+        if check:
+            path = path_dict[sec1["id"]][sec2["id"]]
+        else:
             try:
-                sequence = networkx.astar_path(graph, sec1.id, sec2.id)
+                sequence = networkx.astar_path(graph, sec1["id"], sec2["id"])
                 shortest_path = []
                 length = 0
                 for i in range(len(sequence) - 1):
                     rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
                     shortest_path.append(rid)
                     length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
-                if sec1.id > sec2.id:
-                    # shortest_path[1].reverse()
-                    shortest_path.reverse()
-                uuid_id = str(uuid.uuid4())
-                path = Path(id=uuid_id)
-                path.save()
-                # for rid in shortest_path[1]:
-                for rid in shortest_path:
-                    road = road_network.roads.get(id=rid)
-                    path_fragment = PathFragment(road=road)
-                    path_fragment.save()
-                    path.road.add(path_fragment)
-                path.save()
-                # index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=shortest_path[0])
-                index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=path, length=length)
-                index.save()
             except NetworkXNoPath:
-                index = ShortestPathIndex(city=road_network, start=start_sec, end=end_sec, path=None, length=16777215.0)
-        if index.path is not None:
-            rids = []
-            for segment in index.path.road.all():
-                rids.append(segment.road.id)
-            if sec1.id > sec2.id:
-                rids.reverse()
-        else:
-            rids = None
-        return [index.length, rids]
+                    shortest_path = None
+                    length = 16777215.0
+            path = [length, shortest_path]
+            if not path_dict.has_key(sec1["id"]):
+                path_dict[sec1["id"]] = {}
+            path_dict[sec1["id"]][sec2["id"]] = path
+        return path[0], path[1], path_dict
 
     @staticmethod
-    def shortest_path_astar(road_network, graph, p1, road1, p2, road2):
-        if road1.id == road2.id:
+    def shortest_path_astar(road_network, graph, p1, road1, p2, road2, path_dict, check):
+        if road1["id"] == road2["id"]:
             dis = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p2, road2))
-            return dis, [road1.id]
+            return dis, [road1["id"]], path_dict
         p_cross = Distance.check_intersection(road1, road2)
         if p_cross is not None:
-            p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross.p, road1))
-            p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross.p, road2))
+            p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross["p"], road1))
+            p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
             # print 'road1 and road2 have intersection...'
-            return p1_cross + p2_cross, [road1.id, road2.id]
+            return p1_cross + p2_cross, [road1["id"], road2["id"]], path_dict
         else:
             dis_between_sec = 16777215.0
-            intersec1 = road1.intersection.all()
-            intersec2 = road2.intersection.all()
+            intersec1 = road1["intersection"]
+            intersec2 = road2["intersection"]
             id1 = 0
             id2 = 0
             for i in range(len(intersec1)):
                 for j in range(len(intersec2)):
-                    if Distance.earth_dist(intersec1[i].p, intersec2[j].p) < dis_between_sec:
-                        dis_between_sec = Distance.earth_dist(intersec1[i].p, intersec2[j].p)
+                    if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dis_between_sec:
+                        dis_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
                         id1 = i
                         id2 = j
-            path = ShortestPath.check_shortest_path_from_db(road_network, graph, intersec1[id1], intersec2[id2])
-            dis1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1].p, road1))
-            dis2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2].p, road2))
+            path = ShortestPath.check_shortest_path_from_db(road_network, graph, intersec1[id1], intersec2[id2], path_dict, check)
+            dis1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
+            dis2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
             if path[1] is not None:
-                path_with_end = [road1.id] + path[1] + [road2.id]
+                path_with_end = [road1["id"]] + path[1] + [road2["id"]]
             else:
                 path_with_end = None
-            return path[0] + dis1 + dis2, path_with_end
+            return path[0] + dis1 + dis2, path_with_end, path[2]

@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from decimal import Decimal
+import time
 
 from avatar_core.serializers import *
 from hmm import *
@@ -30,14 +31,20 @@ def find_candidate_road_by_p(request):
 
 @api_view(['GET'])
 def map_matching(request):
-    if 'city' in request.GET and 'id' in request.GET:
+    if 'city' in request.GET and 'id' in request.GET and 'map' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
+        map_file = open(request.GET['map'], "r")
+        road_network = json.loads(map_file.readline())
         candidate_rank = 10
         if 'rank' in request.GET:
             candidate_rank = int(request.GET['rank'])
         traj = Trajectory.objects.get(id=request.GET['id'])
+        trace = TraceSerializer(traj.trace).data
         hmm = HmmMapMatching()
-        hmm_result = hmm.perform_map_matching(city, traj.trace, candidate_rank)
+        start = time.time()
+        hmm_result = hmm.perform_map_matching(road_network, city, trace, candidate_rank, False)
+        end = time.time()
+        print "Map matching task takes " + str(end - start) + "seconds..."
         path = hmm_result['path']
         traj.path = path
         traj.save()
