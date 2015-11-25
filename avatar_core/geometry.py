@@ -3,6 +3,26 @@ import math
 from models import *
 
 
+class Region:
+    def __init__(self):
+        pass
+
+
+    @staticmethod
+    def rect_contain_point(rect, p):
+        if rect["lng"] <= p["lng"] < rect["lng"] + rect["width"] and rect["lat"] <= p["lat"] < rect["lat"] + rect["height"]
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def rect_contain_road(rect, road):
+        for p in road["p"]:
+            if Region.rect_contain_point(rect, p):
+                return True
+        return False
+
+
 class Distance:
     earth_radius = 6371000.0
     degrees_to_radians = math.pi / 180.0

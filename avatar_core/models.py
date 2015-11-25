@@ -95,18 +95,6 @@ class Rect(models.Model):
     def __str__(self):
         return "(" + str(self.lat) + "," + str(self.lng) + "," + str(self.height) + "," + str(self.width) + ")"
 
-    def contains_road(self, road):
-        for p in list(road.p.all()):
-            if self.contains_road_point(p):
-                return True
-        return False
-
-    def contains_road_point(self, p):
-        if self.lng <= p.lng < self.lng + self.width and self.lat <= p.lat < self.lat + self.height:
-            return True
-        else:
-            return False
-
 
 class GridCell(models.Model):
     # Actual ID of the grid cell (lat count, lng count)
