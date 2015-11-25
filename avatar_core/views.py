@@ -312,7 +312,7 @@ def remove_road_network(request):
 
 @api_view(['GET'])
 def load_road_network_to_disk(request):
-    if 'id' in request.GET and 'src' in  request.GET:
+    if 'id' in request.GET and 'src' in request.GET:
         try:
             road_network = RoadNetwork.objects.get(id=request.GET['id'])
         except ObjectDoesNotExist:

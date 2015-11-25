@@ -42,10 +42,10 @@ def map_matching(request):
         trace = TraceSerializer(traj.trace).data
         hmm = HmmMapMatching()
         start = time.time()
-        hmm_result = hmm.perform_map_matching(road_network, city, trace, candidate_rank, False)
+        hmm_result = hmm.perform_map_matching(road_network, trace, candidate_rank)
         end = time.time()
         print "Map matching task takes " + str(end - start) + "seconds..."
-        path = hmm_result['path']
+        path = hmm.save_hmm_path_to_database(city, hmm_result)
         traj.path = path
         traj.save()
         # Save the hmm path for other use
