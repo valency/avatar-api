@@ -4,7 +4,7 @@ from datetime import *
 
 from networkx.readwrite import json_graph
 
-from avatar_map_matching.shortest_path import *
+from avatar_map_matching.hmm import *
 from avatar_core.serializers import *
 
 
@@ -25,14 +25,14 @@ def time_generator():
 
 def shortest_path_generator(road_network, graph, start, end, num_edge, prev_rid):
     if start is not None and end is not None:
-        path = ShortestPath.check_shortest_path_from_db(road_network, graph, start, end)
+        path = find_path_from_index(road_network, graph, start, end)
         target = None
     else:
         if start is not None:
-            source = start.id
+            source = start["id"]
         else:
-            intersections = road_network.intersections.all()
-            source = intersections[random.randint(0, len(intersections)) - 1].id
+            intersections = road_network["intersections"]
+            source = intersections[random.randint(0, len(intersections)) - 1]["id"]
         # Select the target intersections with the right path length to source
         target_set = []
         path_set = networkx.single_source_shortest_path(graph, source, num_edge)
@@ -63,22 +63,22 @@ def shortest_path_generator(road_network, graph, start, end, num_edge, prev_rid)
 
 
 def initial_point(ini_road):
-    p_set = list(ini_road.p.all())
+    p_set = ini_road["p"]
     ini_location = random.randint(0, len(p_set) - 2)
     ini_bias = random.random()
-    ini_lat = p_set[ini_location].lat + ini_bias * (p_set[ini_location + 1].lat - p_set[ini_location].lat)
-    ini_lng = p_set[ini_location].lng + ini_bias * (p_set[ini_location + 1].lng - p_set[ini_location].lng)
-    ini_p = Point(lat=ini_lat, lng=ini_lng)
+    ini_lat = p_set[ini_location]["lat"] + ini_bias * (p_set[ini_location + 1]["lat"] - p_set[ini_location]["lat"])
+    ini_lng = p_set[ini_location]["lng"] + ini_bias * (p_set[ini_location + 1]["lng"] - p_set[ini_location]["lng"])
+    ini_p = {"lat": ini_lat, "lng": ini_lng}
     if settings.DEBUG:
-        print "Initial point is between " + str(ini_location) + "th shape point(" + str(p_set[ini_location].lat) + "," + str(p_set[ini_location].lng) + ") and " + str(ini_location + 1) + "th shape point(" + str(p_set[ini_location + 1].lat) + "," + str(p_set[ini_location + 1].lng) + ") on road " + str(ini_road.id) + "..."
-        print "Point location is (" + str(ini_p.lat) + "," + str(ini_p.lng) + ")"
+        print "Initial point is between " + str(ini_location) + "th shape point(" + str(p_set[ini_location]["lat"]) + "," + str(p_set[ini_location]["lng"]) + ") and " + str(ini_location + 1) + "th shape point(" + str(p_set[ini_location + 1]["lat"]) + "," + str(p_set[ini_location + 1]["lng"]) + ") on road " + str(ini_road["id"]) + "..."
+        print "Point location is (" + str(ini_p["lat"]) + "," + str(ini_p["lng"]) + ")"
     return [ini_p, ini_location]
 
 
 def travel_direction(road, sec):
-    if sec.p.lat == list(road.p.all())[0].lat and sec.p.lng == list(road.p.all())[0].lng:
+    if sec["p"]["lat"] == road["p"][0]["lat"] and sec["p"]["lng"] == road["p"][0]["lng"]:
         return -1
-    elif sec.p.lat == list(road.p.all())[len(list(road.p.all())) - 1].lat and sec.p.lng == list(road.p.all())[len(list(road.p.all())) - 1].lng:
+    elif sec["p"]["lat"] == road["p"][len(road["p"]) - 1]["lat"] and sec["p"]["lng"] == road["p"][len(road["p"]) - 1]["lng"]:
         return 1
     else:
         print "Input intersection not on input road!"
@@ -86,11 +86,11 @@ def travel_direction(road, sec):
 
 
 def next_point(road_network, path, point, road, location, next_sec, path_index, distance):
-    move_path = [road.id]
-    p_set = list(road.p.all())
+    move_path = [road["id"]]
+    p_set = road["p"]
     d = travel_direction(road, next_sec)
     next_l = location + int(0.5 * d + 0.5)
-    if (road.length / (len(p_set) - 1)) > distance:
+    if (road["length"] / (len(p_set) - 1)) > distance:
         long_seg = 1
     else:
         long_seg = 0
@@ -101,57 +101,51 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
     next_lng = None
     while distance > 0:
         if settings.DEBUG:
-            print "Current location is (" + str(point.lat) + "," + str(point.lng) + ")..."
+            print "Current location is (" + str(point["lat"]) + "," + str(point["lng"]) + ")..."
         # Will not reach the next shape point
-        point_dict = PointSerializer(point).data
-        next_p_dict = PointSerializer(p_set[next_l]).data
-        if distance <= Distance.earth_dist(point_dict, next_p_dict):
+        if distance <= Distance.earth_dist(point, next_p):
             if settings.DEBUG:
                 print "Will not reach the next shape point..."
             if long_seg == 1:
                 if settings.DEBUG:
-                    print "Length of road " + str(road.id) + " is " + str(road.length) + " (too long)"
+                    print "Length of road " + str(road["id"]) + " is " + str(road["length"]) + " (too long)"
                 # Current segment is too long, no need to stay on it
                 remain_dis = distance
             else:
                 if settings.DEBUG:
-                    print "Length of road " + str(road.id) + " is " + str(road.length)
+                    print "Length of road " + str(road["id"]) + " is " + str(road["length"])
                 # Randomly decide the remaining distance of the last road segment
                 remain_dis = random.randint(int(distance) / 2, int(distance))
-            point_dict = PointSerializer(point).data
-            next_p_dict = PointSerializer(p_set[next_l]).data
-            k = remain_dis / Distance.earth_dist(point_dict, next_p_dict)
-            next_lat = point.lat + k * (p_set[next_l].lat - point.lat)
-            next_lng = point.lng + k * (p_set[next_l].lng - point.lng)
+            k = remain_dis / Distance.earth_dist(point, next_p)
+            next_lat = point["lat"] + k * (p_set[next_l]["lat"] - point["lat"])
+            next_lng = point["lng"] + k * (p_set[next_l]["lng"] - point["lng"])
             distance = 0
             if settings.DEBUG:
-                print "Finally stays between " + str(location) + "th shape point(" + str(p_set[location].lat) + "," + str(p_set[location].lng) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
+                print "Finally stays between " + str(location) + "th shape point(" + str(p_set[location]["lat"]) + "," + str(p_set[location]["lng"]) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
         else:
-            point_dict = PointSerializer(point).data
-            next_p_dict = PointSerializer(p_set[next_l]).data
-            distance -= Distance.earth_dist(point_dict, next_p_dict)
+            distance -= Distance.earth_dist(point, next_p)
             point = p_set[next_l]
             if settings.DEBUG:
-                print "The location of next intersection is (" + str(next_sec.p.lat) + "," + str(next_sec.p.lng) + ")"
+                print "The location of next intersection is (" + str(next_sec["p"]["lat"]) + "," + str(next_sec["p"]["lng"]) + ")"
             # Should move to the next road
-            if point.lat == next_sec.p.lat and point.lng == next_sec.p.lng:
+            if point["lat"] == next_sec["p"]["lat"] and point["lng"] == next_sec["p"]["lng"]:
                 if settings.DEBUG:
-                    print "Reached to " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
+                    print "Reached to " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
                 path_index += 1
                 rid = path[1][path_index]
-                road = road_network.roads.get(id=rid)
+                road = road_network["roads"][rid]
                 # Skip the road containing only one point
-                while len(list(road.p.all())) < 2:
+                while len(road["p"]) < 2:
                     path_index += 1
-                    road = road_network.roads.get(id=path[1][path_index])
-                move_path.append(road.id)
-                p_set = list(road.p.all())
+                    road = road_network["roads"][path[1][path_index]]
+                move_path.append(road["id"])
+                p_set = road["p"]
                 connected = 0
                 temp_sec = None
-                for sec in road.intersection.all():
+                for sec in road["intersection"]:
                     if settings.DEBUG:
-                        print sec.id + ":" + str(sec.p.lat) + "," + str(sec.p.lng)
-                    if sec.p.lat == next_sec.p.lat and sec.p.lng == next_sec.p.lng:
+                        print sec["id"] + ":" + str(sec["p"]["lat"]) + "," + str(sec["p"]["lng"])
+                    if sec["p"]["lat"] == next_sec["p"]["lat"] and sec["p"]["lng"] == next_sec["p"]["lng"]:
                         connected = 1
                     else:
                         temp_sec = sec
@@ -170,21 +164,18 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                     print "Something is wrong while calculating direction!"
                     raise IOError
                 if settings.DEBUG:
-                    print "Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d].lat) + "," + str(p_set[next_l - d].lng) + ") on road " + str(road.id) + "..."
-                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
+                    print "Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d]["lat"]) + "," + str(p_set[next_l - d]["lng"]) + ") on road " + str(road["id"]) + "..."
+                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
             # Stick to the current road
             else:
                 next_l += d
                 if settings.DEBUG:
-                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l].lat) + "," + str(p_set[next_l].lng) + ") on road " + str(road.id) + "..."
+                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
             location = next_l - int(0.5 * d + 0.5)
-    next_p = Point(lat=next_lat, lng=next_lng)
+    next_p = {"lat": next_lat, "lng": next_lng}
     if settings.DEBUG:
-        print "Point location is (" + str(next_p.lat) + "," + str(next_p.lng) + ")"
-    next_p_dict = PointSerializer(next_p).data
-    next_sec_dict = PointSerializer(next_sec.p).data
-    road_dict = RoadSerializer(road).data
-    dis_to_go = abs(Distance.length_to_start(next_p_dict, road_dict) - Distance.length_to_start(next_sec_dict, road_dict))
+        print "Point location is (" + str(next_p["lat"]) + "," + str(next_p["lng"]) + ")"
+    dis_to_go = abs(Distance.length_to_start(next_p, road) - Distance.length_to_start(next_sec, road))
     if settings.DEBUG:
         print "Remaining distance on this road is " + str(dis_to_go)
     return [next_p, road, location, path_index, next_sec, move_path]
@@ -195,30 +186,26 @@ def add_noise(point, road, shake):
     noise_dist = random.gauss(0, delta * shake)
     while noise_dist >= 1436:  # Observed largest distance error
         noise_dist = abs(random.gauss(0, delta + shake))
-    r_dict = RoadSerializer(road).data
-    p_dict = PointSerializer(point).data
-    p_location = Distance.point_location(p_dict, r_dict)
-    p1 = list(road.p.all())[p_location]
-    p2 = list(road.p.all())[p_location + 1]
-    p1_dict = PointSerializer(p1).data
-    p2_dict = PointSerializer(p2).data
-    delta_lat = abs(p2.lng - p1.lng) * noise_dist / Distance.earth_dist(p1_dict, p2_dict)
-    delta_lng = abs(p2.lat - p1.lat) * noise_dist / Distance.earth_dist(p1_dict, p2_dict)
+    p_location = Distance.point_location(point, road)
+    p1 = road["p"][p_location]
+    p2 = road["p"][p_location + 1]
+    delta_lat = abs(p2["lng"] - p1["lng"]) * noise_dist / Distance.earth_dist(p1, p2)
+    delta_lng = abs(p2["lat"] - p1["lat"]) * noise_dist / Distance.earth_dist(p1, p2)
     lat_dir = random.choice((-1, 1))
-    if p2.lng == p1.lng or (p2.lat - p1.lat) / (p2.lng - p1.lng) > 0:
-        noised_lat = point.lat + lat_dir * delta_lat
-        noised_lng = point.lng - lat_dir * delta_lng
+    if p2["lng"] == p1["lng"] or (p2["lat"] - p1["lat"]) / (p2["lng"] - p1["lng"]) > 0:
+        noised_lat = point["lat"] + lat_dir * delta_lat
+        noised_lng = point["lng"] - lat_dir * delta_lng
     else:
-        noised_lat = point.lat + lat_dir * delta_lat
-        noised_lng = point.lng + lat_dir * delta_lng
-    noised_p = Point(lat=noised_lat, lng=noised_lng)
+        noised_lat = point["lat"] + lat_dir * delta_lat
+        noised_lng = point["lng"] + lat_dir * delta_lng
+    noised_p = {"lat": noised_lat, "lng": noised_lng}
     return noised_p
 
 
 def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, shake, missing_rate):
     if settings.DEBUG:
         print "Building road network graph..."
-    graph = json_graph.node_link_graph(json.loads(road_network.graph))
+    graph = json_graph.node_link_graph(json.loads(road_network["graph"]))
     traj_set = []
     ground_truth = []
     path_len = []
@@ -258,16 +245,17 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                     if sub_path is None:
                         rebuild = True
                     else:
-                        start = road_network.intersections.get(id=target)
+                        start = road_network["intersections"][target]
                         remain_num_edge -= 50
                         path[0] += sub_path[0]
                         path[1] += sub_path[1]
                         prev_rid = path[1][len(path[1]) - 1]
                 else:
-                    road_set = road_network.roads.filter(intersection__id__exact=start.id)
+                    neighbor = networkx.single_source_shortest_path(graph, source, 1)
+                    # road_set = road_network.roads.filter(intersection__id__exact=start.id)
                     if settings.DEBUG:
-                        print road_set
-                    if len(road_set) == 1:
+                        print neighbor
+                    if len(neighbor) == 1:
                         rebuild = True
                         if settings.DEBUG:
                             print "The shortest path has to turn around, aborting..."
@@ -280,7 +268,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                             if sub_path[1][0] == path[1][len(path[1]) - 1]:
                                 print "Wrong path selected!"
                                 raise IOError
-                            start = road_network.intersections.get(id=target)
+                            start = road_network["intersections"][target]
                             remain_num_edge -= 50
                             path[0] += sub_path[0]
                             path[1] += sub_path[1]
@@ -298,35 +286,36 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ini_sample_id = str(uuid.uuid4())
         ini_time = time_generator()
         ini_r_index = 0
-        ini_road = road_network.roads.get(id=path[1][ini_r_index])
+        ini_road = road_network["roads"][path[1][ini_r_index]]
         # Skip the road containing only one point
-        while len(list(ini_road.p.all())) < 2:
+        while len(ini_road["p"]) < 2:
             ini_r_index += 1
-            ini_road = road_network.roads.get(id=path[1][ini_r_index])
+            ini_road = road_network["roads"][path[1][ini_r_index]]
         ini_p = initial_point(ini_road)
         # Add Gaussian noise to each sample point
         noised_p = add_noise(ini_p[0], ini_road, shake)
         # noised_p = ini_p[0]
-        noised_p.save()
-        ini_sample = Sample(id=ini_sample_id, p=noised_p, t=ini_time, speed=0, angle=0, occupy=0, src=0)
+        ini_p_db = Point(lat=noised_p["lat"], lng=noised_p["lng"])
+        ini_p_db.save()
+        ini_sample = Sample(id=ini_sample_id, p=ini_p_db, t=ini_time, speed=0, angle=0, occupy=0, src=0)
         ini_sample.save()
         traj.trace.p.add(ini_sample)
         traj_rids.append([ini_road.id, [0]])
         # Save the current information for generating the next sample
         prev_p = ini_p[0]
         prev_road = ini_road
-        prev_secset = prev_road.intersection.all()
+        prev_secset = prev_road["intersection"]
         second_r_index = ini_r_index + 1
-        second_road = road_network.roads.get(id=path[1][ini_r_index + 1])
+        second_road = road_network["roads"][path[1][ini_r_index + 1]]
         # Skip the road containing only one point
-        while len(list(second_road.p.all())) < 2:
+        while len(second_road["p"]) < 2:
             second_r_index += 1
-            second_road = road_network.roads.get(id=path[1][second_r_index])
-        second_secset = second_road.intersection.all()
-        if prev_secset[0].id == second_secset[0].id or prev_secset[0].id == second_secset[1].id:
+            second_road = road_network["roads"][path[1][second_r_index]]
+        second_secset = second_road["intersection"]
+        if prev_secset[0]["id"] == second_secset[0]["id"] or prev_secset[0]["id"] == second_secset[1]["id"]:
             ini_sec = prev_secset[1]
             prev_sec = prev_secset[0]
-        elif prev_secset[1].id == second_secset[0].id or prev_secset[1].id == second_secset[1].id:
+        elif prev_secset[1]["id"] == second_secset[0]["id"] or prev_secset[1]["id"] == second_secset[1]["id"]:
             ini_sec = prev_secset[0]
             prev_sec = prev_secset[1]
         else:
@@ -336,10 +325,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         prev_l = ini_p[1]
         prev_path_index = 0
         prev_time = ini_time
-        ini_p_dict = PointSerializer(ini_p[0]).data
-        ini_sec_dict = PointSerializer(ini_sec.p).data
-        ini_road_dict = RoadSerializer(ini_road).data
-        ini_dis = abs(Distance.length_to_start(ini_p_dict, ini_road_dict) - Distance.length_to_start(ini_sec_dict, ini_road_dict))
+        ini_dis = abs(Distance.length_to_start(ini_p, ini_road) - Distance.length_to_start(ini_sec, ini_road))
         avg_length = int((path[0] - ini_dis) / (num_sample - 1))
         if settings.DEBUG:
             print "Average length between each two sample is " + str(avg_length)
@@ -356,9 +342,10 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 # Add Gaussian noise to each sample point
                 noised_p = add_noise(next_p[0], next_p[1], shake)
                 # noised_p = next_p[0]
-                noised_p.save()
+                next_p_db = Point(lat=noised_p["lat"], lng=noised_p["lng"])
+                next_p_db.save()
                 next_sample_id = str(uuid.uuid4())
-                next_sample = Sample(id=next_sample_id, p=noised_p, t=next_time, speed=0, angle=0, occupy=0, src=0)
+                next_sample = Sample(id=next_sample_id, p=next_p_db, t=next_time, speed=0, angle=0, occupy=0, src=0)
                 next_sample.save()
                 traj.trace.p.add(next_sample)
                 current_sample_num += 1

@@ -38,47 +38,54 @@ def find_candidates_from_road(road_network, point):
     return candidates
 
 
-    @staticmethod
-    def get_route_dist(graph, shortest_path_index, p1, road1, p2, road2):
-        if road1["id"] == road2["id"]:
-            dist = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p2, road2))
-            return dist, [road1["id"]]
-        p_cross = Distance.check_intersection(road1, road2)
-        if p_cross is not None:
-            p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross["p"], road1))
-            p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
-            return p1_cross + p2_cross, [road1["id"], road2["id"]]
+def find_path_from_index(graph, shortest_path_index, start, end):
+    if shortest_path_index[start["id"]].has_key(end["id"]):
+        sequence = shortest_path_index[start["id"]][end["id"]]
+        path = []
+        length = 0
+        for i in range(len(sequence) - 1):
+            rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
+            path.append(rid)
+            length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
+    # Two roads are not connected on the graph, set path to none
+    else:
+        path = None
+        length = 16777215.0
+    return length, path
+
+
+def get_route_dist(graph, shortest_path_index, p1, road1, p2, road2):
+    if road1["id"] == road2["id"]:
+        dist = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p2, road2))
+        return dist, [road1["id"]]
+    p_cross = Distance.check_intersection(road1, road2)
+    if p_cross is not None:
+        p1_cross = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(p_cross["p"], road1))
+        p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
+        return p1_cross + p2_cross, [road1["id"], road2["id"]]
+    else:
+        # Assume the shortest path is between the closest intersections between two roads
+        dist_between_sec = 16777215.0
+        intersec1 = road1["intersection"]
+        intersec2 = road2["intersection"]
+        id1 = 0
+        id2 = 0
+        for i in range(len(intersec1)):
+            for j in range(len(intersec2)):
+                if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dist_between_sec:
+                    dist_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
+                    id1 = i
+                    id2 = j
+        shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[id1], intersec2[id2])
+        if shortest_path[1] is not None:
+            dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
+            dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
+            path = [road1["id"]] + shortest_path[1] + [road2["id"]]
+            length = shortest_path[0] + dist1 + dist2
         else:
-            # Assume the shortest path is between the closest intersections between two roads
-            dist_between_sec = 16777215.0
-            intersec1 = road1["intersection"]
-            intersec2 = road2["intersection"]
-            id1 = 0
-            id2 = 0
-            for i in range(len(intersec1)):
-                for j in range(len(intersec2)):
-                    if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dist_between_sec:
-                        dist_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
-                        id1 = i
-                        id2 = j
-            # Find the path from shortest path index
-            if shortest_path_index[intersec1[id1]["id"]].has_key(intersec2[id2]["id"]):
-                sequence = shortest_path_index[intersec1[id1]["id"]][intersec2[id2]["id"]]
-                path = []
-                length = 0
-                for i in range(len(sequence) - 1):
-                    rid = graph.get_edge_data(sequence[i], sequence[i + 1])["id"]
-                    path.append(rid)
-                    length += graph.get_edge_data(sequence[i], sequence[i + 1])["weight"]
-                dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
-                dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
-                path = [road1["id"]] + path + [road2["id"]]
-                length = length + dist1 + dist2
-            # Two roads are not connected on the graph, set path to none
-            else:
-                path = None
-                length = 16777215.0
-            return length, path
+            path = shortest_path[1]
+            length = shortest_path[0]
+        return length, path
 
 
 class HmmMapMatching:
@@ -296,19 +303,11 @@ class HmmMapMatching:
         connect_routes.reverse()
         return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
 
-    def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_list, beta):
-        action_set = {}
+    def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
         r_index_set = {}
         # p_list = trace.p.all().order_by("t")
         p_list = trace["p"]
         p_list.sort(key=lambda d:d["t"])
-        # Get all the (p_index, rid) pair from action_list
-        for action in action_list.action.all():
-            for i in range(len(p_list)):
-                if p_list[i].id == action.point.id:
-                    action_set[i] = action.road.id
-        if settings.DEBUG:
-            print action_set
         # candidate_map = []
         chosen_index = []
         ini_prob = []
@@ -373,13 +372,14 @@ class HmmMapMatching:
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
         return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
 
-    def reperform_map_matching(self, road_network, trace, rank, action_list, beta):
+    def reperform_map_matching(self, road_network, trace, rank, action_set, beta):
         if settings.DEBUG:
             print "Building road network graph..."
         graph = json_graph.node_link_graph(json.loads(road_network.graph))
+        shortest_path_index = json_graph.node_link_graph(json.loads(road_network["shortest_path_index"]))
         if settings.DEBUG:
             print "Reperform map matching with human label..."
-        self.hmm_with_label(road_network, graph, shortest_path_index, trace, rank, action_list, beta)
+        self.hmm_with_label(road_network, graph, shortest_path_index, trace, rank, action_set, beta)
         if settings.DEBUG:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
