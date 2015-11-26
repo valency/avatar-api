@@ -1,5 +1,6 @@
 import csv
 import json
+import memcache
 import uuid
 from datetime import datetime
 
@@ -18,6 +19,7 @@ from serializers import *
 
 MAP_UPLOAD_DIR = "/var/www/html/avatar/data/map/"
 TRAJ_UPLOAD_DIR = "/var/www/html/avatar/data/trajectory/"
+CACHE = memcache.Client(["127.0.0.1:11211"])
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
@@ -114,7 +116,7 @@ def create_road_network_from_local_file(request):
             print "Warning: road " + road.id + " has only one intersection"
             pass
         # Calculate road length
-        rr.length = int(Distance.road_length(rr))
+        rr.length = int(Distance.road_length(RoadSerializer(rr).data))
         # Save road
         rr.save()
 
@@ -312,14 +314,14 @@ def remove_road_network(request):
 
 @api_view(['GET'])
 def load_road_network_to_disk(request):
-    if 'id' in request.GET and 'src' in request.GET:
+    if 'id' in request.GET:
         try:
             road_network = RoadNetwork.objects.get(id=request.GET['id'])
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         road_network_data = RoadNetworkSerializer(road_network).data
         # Re-construct the road network into a dictionary
-        road_network_dict = {}
+        road_network_dict = dict()
         # Save all roads associated with the road network
         road_network_dict["roads"] = {}
         for road in road_network_data["roads"]:
@@ -342,10 +344,12 @@ def load_road_network_to_disk(request):
         road_network_dict["graph"] = road_network_data["graph"]
         # Write the road network dictionary to file
         road_network_str = json.dumps(road_network_dict)
-        output = open(request.GET['src'], "w")
+        output = open(MAP_UPLOAD_DIR + "road-network-" + road_network.city + "-" + request.GET['id'], "w")
         output.write(road_network_str)
         output.close()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        # Write the road network into memory cache
+        CACHE.set("road_network_" + request.GET['id'], road_network_str)
+        return Response(status=status.HTTP_200_OK)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

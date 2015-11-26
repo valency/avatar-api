@@ -1,16 +1,13 @@
 import math
 
-from models import *
-
 
 class Region:
     def __init__(self):
         pass
 
-
     @staticmethod
     def rect_contain_point(rect, p):
-        if rect["lng"] <= p["lng"] < rect["lng"] + rect["width"] and rect["lat"] <= p["lat"] < rect["lat"] + rect["height"]
+        if rect["lng"] <= p["lng"] < rect["lng"] + rect["width"] and rect["lat"] <= p["lat"] < rect["lat"] + rect["height"]:
             return True
         else:
             return False
@@ -95,7 +92,7 @@ class Distance:
         return {'mapped': mapped_p, 'location': location, 'dist': dist}
 
     @staticmethod
-    # route distance between the query point and the first point of the road
+    # Route distance between the query point and the first point of the road
     def length_to_start(p, road):
         p_set = road["p"]
         location = Distance.point_location(p, road)

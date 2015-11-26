@@ -1,20 +1,15 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from decimal import Decimal
 import time
 
-from avatar_core.serializers import *
+from avatar_core.views import *
 from hmm import *
 from models import *
 
 
 @api_view(['GET'])
 def find_candidate_road_by_p(request):
-    if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET and 'map' in request.GET:
+    if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         # city = RoadNetwork.objects.get(id=request.GET['city'])
-        map_file = open(request.GET['map'], "r")
-        road_network = json.loads(map_file.readline())
+        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
         point = Point(lat=float(request.GET['lat']), lng=float(request.GET['lng']))
         p = PointSerializer(point).data
         dist = 500.0
@@ -34,10 +29,9 @@ def find_candidate_road_by_p(request):
 
 @api_view(['GET'])
 def map_matching(request):
-    if 'city' in request.GET and 'id' in request.GET and 'map' in request.GET:
+    if 'city' in request.GET and 'id' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
-        map_file = open(request.GET['map'], "r")
-        road_network = json.loads(map_file.readline())
+        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
         candidate_rank = 10
         if 'rank' in request.GET:
             candidate_rank = int(request.GET['rank'])
@@ -124,7 +118,7 @@ def map_matching(request):
 
 @api_view(['GET'])
 def reperform_map_matching(request):
-    if 'city' in request.GET and 'id' in request.GET and 'pid' in request.GET and 'rid' in request.GET and 'uid' in request.GET and 'map' in request.GET:
+    if 'city' in request.GET and 'id' in request.GET and 'pid' in request.GET and 'rid' in request.GET and 'uid' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
         candidate_rank = 10
         if 'rank' in request.GET:
@@ -149,8 +143,7 @@ def reperform_map_matching(request):
         action_list.action.add(action)
         action_list.save()
         # Load road network and trace to memory
-        map_file = open(request.GET['map'], "r")
-        road_network = json.loads(map_file.readline())
+        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
         trace = TraceSerializer(traj.trace).data
         # Convert action list to dictionary
         action_set = {}

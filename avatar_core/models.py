@@ -100,7 +100,7 @@ class GridCell(models.Model):
     # Actual ID of the grid cell (lat count, lng count)
     lat_id = models.IntegerField()
     lng_id = models.IntegerField()
-    # Bounding box of the girid cell
+    # Bounding box of the gird cell
     area = models.ForeignKey(Rect)
     roads = models.ManyToManyField(Road)
     intersections = models.ManyToManyField(Intersection)

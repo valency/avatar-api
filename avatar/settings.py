@@ -81,6 +81,13 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ORIGIN_WHITELIST = ()
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'avatar',
+    }
+}
+
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
