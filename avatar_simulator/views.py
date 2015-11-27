@@ -34,8 +34,10 @@ def generate_trajectory(request):
 
 @api_view(['GET'])
 def generate_synthetic_trajectory(request):
-    if "city" in request.GET and "traj" in request.GET and "point" in request.GET:
+    if "city" in request.GET and "traj" in request.GET and "point" in request.GET and 'map' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
+        map_file = open(request.GET['map'], "r")
+        road_network = json.loads(map_file.readline())
         num_traj = int(request.GET['traj'])
         num_sample = int(request.GET['point'])
         sample_rate = 60
@@ -56,7 +58,7 @@ def generate_synthetic_trajectory(request):
             shake = float(request.GET['shake'])
         if "miss" in request.GET:
             missing_rate = float(request.GET['miss'])
-        result = synthetic_traj_generator(city, num_traj, num_sample, sample_rate, start, end, num_edge, shake, missing_rate)
+        result = synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, shake, missing_rate)
         traj_id = []
         for traj in result[0]:
             traj_id.append(traj.id)

@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'road_network/grid/create/$', views.create_grid_index_by_road_network_id),
     url(r'road_network/graph/create/$', views.create_graph_by_road_network_id),
     url(r'road_network/graph/get/$', views.get_graph_by_road_network_id),
+    url(r'road_network/graph/shortest_path/create/$', views.create_shortest_path_index),
     # Celery related
     url(r'demo/$', views.demo),
     url(r'demo/result/$', views.demo_result)
