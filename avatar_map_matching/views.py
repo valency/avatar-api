@@ -5,9 +5,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from decimal import Decimal
-import time
-import json
 
 from avatar_core.cache import *
 from hmm import *

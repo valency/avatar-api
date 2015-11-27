@@ -386,7 +386,7 @@ class HmmMapMatching:
 
     def save_hmm_path_to_database(self, road_network_db, hmm_result):
         # TODO: traj below is not defined
-        hmm_path = Path(id=traj.trace.id)
+        hmm_path = Path(id=1)  # traj.trace.id
         for prev_fragment in hmm_path.road.all():
             hmm_path.road.remove(prev_fragment)
         hmm_path.save()
