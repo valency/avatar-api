@@ -1,10 +1,9 @@
 import json
 from decimal import Decimal
-import networkx
-from networkx import NetworkXNoPath
-from networkx.readwrite import json_graph
 
 from django.conf import settings
+from networkx.readwrite import json_graph
+
 from avatar_core.geometry import *
 from models import *
 
@@ -110,7 +109,7 @@ class HmmMapMatching:
         count = 0
         # p_set = trace.p.all().order_by("t")
         p_list = trace["p"]
-        p_list.sort(key=lambda d:d["t"])
+        p_list.sort(key=lambda d: d["t"])
         for p in p_list:
             if settings.DEBUG:
                 print p["id"]
@@ -261,9 +260,9 @@ class HmmMapMatching:
         connect_routes = []
         # p_list = trace.p.all().order_by("t")
         p_list = trace["p"]
-        p_list.sort(key=lambda d:d["t"])
+        p_list.sort(key=lambda d: d["t"])
         # if settings.DEBUG:
-            # print self.map_matching_prob
+        # print self.map_matching_prob
         if settings.DEBUG:
             print "Performing backward tracing..."
         final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
@@ -271,11 +270,10 @@ class HmmMapMatching:
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
         if len(self.emission_dist) != 0:
             final_dist = self.emission_dist[len(self.candidate_rid) - 1][final_index]
+            hmm_path_dist.append(final_dist)
         current_index = final_index
         hmm_path_index.append(final_index)
         hmm_path_rids.append(final_rid)
-        if len(self.emission_dist) != 0:
-            hmm_path_dist.append(final_dist)
         for i in range(len(chosen_index), 0, -1):
             prev_index = chosen_index[i - 1][hmm_path_index[len(hmm_path_rids) - 1]]
             prev_rid = self.candidate_rid[i - 1][prev_index]
@@ -307,7 +305,7 @@ class HmmMapMatching:
         r_index_set = {}
         # p_list = trace.p.all().order_by("t")
         p_list = trace["p"]
-        p_list.sort(key=lambda d:d["t"])
+        p_list.sort(key=lambda d: d["t"])
         # candidate_map = []
         chosen_index = []
         ini_prob = []
@@ -387,6 +385,7 @@ class HmmMapMatching:
         return {'path': sequence[0], 'route': sequence[1], 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
 
     def save_hmm_path_to_database(self, road_network_db, hmm_result):
+        # TODO: traj below is not defined
         hmm_path = Path(id=traj.trace.id)
         for prev_fragment in hmm_path.road.all():
             hmm_path.road.remove(prev_fragment)

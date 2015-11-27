@@ -1,6 +1,4 @@
 import csv
-import json
-import memcache
 import uuid
 from datetime import datetime
 
@@ -14,12 +12,12 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from cache import *
 from geometry import *
 from serializers import *
 
 MAP_UPLOAD_DIR = "/var/www/html/avatar/data/map/"
 TRAJ_UPLOAD_DIR = "/var/www/html/avatar/data/trajectory/"
-CACHE = memcache.Client(["127.0.0.1:11211"])
 
 
 class TrajectoryViewSet(viewsets.ModelViewSet):
@@ -313,43 +311,26 @@ def remove_road_network(request):
 
 
 @api_view(['GET'])
-def load_road_network_to_disk(request):
-    if 'id' in request.GET:
-        try:
-            road_network = RoadNetwork.objects.get(id=request.GET['id'])
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        road_network_data = RoadNetworkSerializer(road_network).data
-        # Re-construct the road network into a dictionary
-        road_network_dict = dict()
-        # Save all roads associated with the road network
-        road_network_dict["roads"] = {}
-        for road in road_network_data["roads"]:
-            road_network_dict["roads"][road["id"]] = road
-        # Save all intersections associated with the road network
-        road_network_dict["intersections"] = {}
-        for intersection in road_network_data["intersections"]:
-            road_network_dict["intersections"][intersection["id"]] = intersection
-        # Save all grid cells associated with the road network
-        road_network_dict["grid_cells"] = {}
-        for grid_cell in road_network_data["grid_cells"]:
-            if not road_network_dict["grid_cells"].has_key(grid_cell["lat_id"]):
-                road_network_dict["grid_cells"][grid_cell["lat_id"]] = {}
-            road_network_dict["grid_cells"][grid_cell["lat_id"]][grid_cell["lng_id"]] = grid_cell
-        # Save other information associated with the road network
-        road_network_dict["grid_lat_count"] = road_network_data["grid_lat_count"]
-        road_network_dict["grid_lng_count"] = road_network_data["grid_lng_count"]
-        road_network_dict["pmin"] = road_network_data["pmin"]
-        road_network_dict["pmax"] = road_network_data["pmax"]
-        road_network_dict["graph"] = road_network_data["graph"]
-        # Write the road network dictionary to file
-        road_network_str = json.dumps(road_network_dict)
-        output = open(MAP_UPLOAD_DIR + "road-network-" + road_network.city + "-" + request.GET['id'], "w")
-        output.write(road_network_str)
-        output.close()
-        # Write the road network into memory cache
-        CACHE.set("road_network_" + request.GET['id'], road_network_str)
+def clip_road_network(request):
+    if 'id' in request.GET and 'min_lat' in request.GET and 'min_lng' in request.GET and 'max_lat' in request.GET and 'max_lng' in request.GET:
+        # TODO: not started yet
         return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def export_road_network_to_local_file(request):
+    if 'id' in request.GET:
+        road_network_id = request.GET["id"]
+        road_network = RoadNetwork.objects.get(id=road_network_id)
+        file_name = "avatar-road-network-" + road_network.city + "-" + road_network_id + ".json"
+        f = open(MAP_UPLOAD_DIR + file_name, "w")
+        f.write(get_road_network_by_id(road_network_id))
+        f.close()
+        return Response({
+            "filename": file_name
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

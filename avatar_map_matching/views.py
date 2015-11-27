@@ -1,6 +1,12 @@
 import time
+import uuid
 
-from avatar_core.views import *
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from avatar_core.cache import *
 from hmm import *
 from models import *
 
@@ -9,7 +15,7 @@ from models import *
 def find_candidate_road_by_p(request):
     if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         # city = RoadNetwork.objects.get(id=request.GET['city'])
-        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
+        road_network = get_road_network_by_id(request.GET['city'])
         point = Point(lat=float(request.GET['lat']), lng=float(request.GET['lng']))
         p = PointSerializer(point).data
         dist = 500.0
@@ -31,7 +37,11 @@ def find_candidate_road_by_p(request):
 def map_matching(request):
     if 'city' in request.GET and 'id' in request.GET:
         city = RoadNetwork.objects.get(id=request.GET['city'])
-        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
+        road_network = get_road_network_by_id(request.GET['city'])
+        if road_network is None:
+            road_network = None
+        else:
+            road_network = json.loads(road_network)
         candidate_rank = 10
         if 'rank' in request.GET:
             candidate_rank = int(request.GET['rank'])
@@ -41,7 +51,7 @@ def map_matching(request):
         start = time.time()
         hmm_result = hmm.perform_map_matching(road_network, trace, candidate_rank)
         end = time.time()
-        print "Map matching task takes " + str(end - start) + "seconds..."
+        print "Map matching task takes " + str(end - start) + " seconds..."
         path = hmm.save_hmm_path_to_database(city, hmm_result)
         traj.path = path
         traj.save()
@@ -143,7 +153,7 @@ def reperform_map_matching(request):
         action_list.action.add(action)
         action_list.save()
         # Load road network and trace to memory
-        road_network = json.loads(CACHE.get("road_network_" + request.GET['city']))
+        road_network = get_road_network_by_id(request.GET['city'])
         trace = TraceSerializer(traj.trace).data
         # Convert action list to dictionary
         action_set = {}
