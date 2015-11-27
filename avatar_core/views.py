@@ -442,6 +442,19 @@ def create_graph_by_road_network_id(request):
 
 
 @api_view(['GET'])
+def create_shortest_path_index(request):
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        graph = json_graph.node_link_graph(json.loads(road_network.graph))
+        index = networkx.all_pairs_dijkstra_path(graph)
+        road_network.shortest_path_index = json.dumps(index)
+        road_network.save()
+        return Response(status=status.HTTP_201_CREATED)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
 def get_graph_by_road_network_id(request):
     if 'id' in request.GET:
         road_network = RoadNetwork.objects.get(id=request.GET["id"])

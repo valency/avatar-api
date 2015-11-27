@@ -10,7 +10,7 @@ class Region:
 
     @staticmethod
     def rect_contain_point(rect, p):
-        if rect["lng"] <= p["lng"] < rect["lng"] + rect["width"] and rect["lat"] <= p["lat"] < rect["lat"] + rect["height"]
+        if rect["lng"] <= p["lng"] < rect["lng"] + rect["width"] and rect["lat"] <= p["lat"] < rect["lat"] + rect["height"]:
             return True
         else:
             return False

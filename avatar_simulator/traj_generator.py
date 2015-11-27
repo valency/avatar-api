@@ -2,8 +2,6 @@
 import random
 from datetime import *
 
-from avatar_map_matching.shortest_path import *
-
 
 def time_generator():
     year = 2014
