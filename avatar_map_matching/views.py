@@ -55,7 +55,7 @@ def map_matching(request):
         hmm_result = hmm.perform_map_matching(road_network, trace, candidate_rank)
         end = time.time()
         print "Map matching task takes " + str(end - start) + " seconds..."
-        path = hmm.save_hmm_path_to_database(city, hmm_result)
+        path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
         traj.path = path
         traj.save()
         # Save the hmm path for other use
@@ -138,7 +138,7 @@ def reperform_map_matching(request):
         road_network = get_road_network_by_id(request.GET['city'])
         trace = TraceSerializer(traj.trace).data
         # Convert action list to dictionary
-        action_set = {}
+        action_set = dict()
         p_list = traj.trace.p.all().order_by("t")
         for action in action_list.action.all():
             for i in range(len(p_list)):
@@ -156,7 +156,7 @@ def reperform_map_matching(request):
         hmm.emission_prob = emission_prob
         hmm.transition_prob = transition_prob
         hmm_result = hmm.reperform_map_matching(road_network, trace, candidate_rank, action_set, beta)
-        path = hmm.save_hmm_path_to_database(city, hmm_result)
+        path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
         traj.path = path
         traj.save()
         return Response(TrajectorySerializer(traj).data)

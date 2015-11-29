@@ -1,8 +1,10 @@
 import json
+import networkx
 from decimal import Decimal
 
 from django.conf import settings
 from networkx.readwrite import json_graph
+from networkx import NetworkXNoPath
 
 from avatar_core.geometry import *
 from models import *
@@ -38,8 +40,16 @@ def find_candidates_from_road(road_network, point):
 
 
 def find_path_from_index(graph, shortest_path_index, start, end):
-    if shortest_path_index[start["id"]].has_key(end["id"]):
-        sequence = shortest_path_index[start["id"]][end["id"]]
+    sequence = []
+    if shortest_path_index is not None:
+        if shortest_path_index[start["id"]].has_key(end["id"]):
+            sequence = shortest_path_index[start["id"]][end["id"]]
+    else:
+        try:
+            sequence = networkx.astar_path(graph, start["id"], end["id"])
+        except NetworkXNoPath:
+            pass
+    if len(sequence) != 0:
         path = []
         length = 0
         for i in range(len(sequence) - 1):
@@ -302,7 +312,7 @@ class HmmMapMatching:
         return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
-        r_index_set = {}
+        r_index_set = dict()
         # p_list = trace.p.all().order_by("t")
         p_list = trace["p"]
         p_list.sort(key=lambda d: d["t"])
@@ -384,9 +394,8 @@ class HmmMapMatching:
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
         return {'path': sequence[0], 'route': sequence[1], 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
 
-    def save_hmm_path_to_database(self, road_network_db, hmm_result):
-        # TODO: traj below is not defined
-        hmm_path = Path(id=traj.trace.id)
+    def save_hmm_path_to_database(self, road_network_db, trace_id, hmm_result):
+        hmm_path = Path(id=trace_id)
         for prev_fragment in hmm_path.road.all():
             hmm_path.road.remove(prev_fragment)
         hmm_path.save()
