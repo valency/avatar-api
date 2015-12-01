@@ -6,6 +6,5 @@ import views
 router = routers.DefaultRouter()
 
 urlpatterns = [
-    url(r'generate_traj/$', views.generate_trajectory),
     url(r'generate_syn_traj/$', views.generate_synthetic_trajectory)
 ]

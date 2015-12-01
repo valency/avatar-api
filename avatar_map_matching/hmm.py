@@ -371,8 +371,8 @@ class HmmMapMatching:
     def perform_map_matching(self, road_network, trace, rank):
         if settings.DEBUG:
             print "Building road network graph..."
-        graph = json_graph.node_link_graph(json.loads(road_network["graph"]))
-        shortest_path_index = json.loads(road_network["shortest_path_index"])
+        graph = json_graph.node_link_graph(road_network["graph"])
+        shortest_path_index = road_network["shortest_path_index"]
         beta = self.hmm_prob_model(road_network, graph, shortest_path_index, trace, rank)
         if settings.DEBUG:
             print "Implementing viterbi algorithm..."
@@ -383,8 +383,8 @@ class HmmMapMatching:
     def reperform_map_matching(self, road_network, trace, rank, action_set, beta):
         if settings.DEBUG:
             print "Building road network graph..."
-        graph = json_graph.node_link_graph(json.loads(road_network.graph))
-        shortest_path_index = json.loads(road_network["shortest_path_index"])
+        graph = json_graph.node_link_graph(road_network["graph"])
+        shortest_path_index = road_network["shortest_path_index"]
         if settings.DEBUG:
             print "Reperform map matching with human label..."
         self.hmm_with_label(road_network, graph, shortest_path_index, trace, rank, action_set, beta)

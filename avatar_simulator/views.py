@@ -3,41 +3,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from synthetic_traj_generator import *
-from traj_generator import *
-
-
-@api_view(['GET'])
-def generate_trajectory(request):
-    if "city" in request.GET and "traj" in request.GET and "point" in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
-        num_traj = int(request.GET['traj'])
-        num_sample = int(request.GET['point'])
-        stop_rate = 0.05
-        sample_rate = 60
-        # GPS error around 20m
-        delta_lat = 0.0001
-        delta_lng = 0.0002
-        if "stop" in request.GET:
-            stop_rate = float(request.GET['stop'])
-        if "sample" in request.GET:
-            sample_rate = float(request.GET['sample'])
-        if "lat" in request.GET:
-            delta_lat = float(request.GET['lat'])
-        if "lng" in request.GET:
-            delta_lng = float(request.GET['lng'])
-        result = traj_generator(city, num_traj, num_sample, stop_rate, sample_rate, delta_lat, delta_lng)
-        print "Finished!"
-        return Response(result[1])
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+from avatar_core.cache import *
 
 
 @api_view(['GET'])
 def generate_synthetic_trajectory(request):
-    if "city" in request.GET and "traj" in request.GET and "point" in request.GET and 'map' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
-        map_file = open(request.GET['map'], "r")
-        road_network = json.loads(map_file.readline())
+    if "city" in request.GET and "traj" in request.GET and "point" in request.GET:
+        road_network = get_road_network_by_id(request.GET['city'])
         num_traj = int(request.GET['traj'])
         num_sample = int(request.GET['point'])
         sample_rate = 60
@@ -49,9 +21,9 @@ def generate_synthetic_trajectory(request):
         if "sample" in request.GET:
             sample_rate = float(request.GET['sample'])
         if "start" in request.GET:
-            start = city.intersections.get(id=request.GET['start'])
+            start = road_network["intersections"][request.GET['start']]
         if "end" in request.GET:
-            end = city.intersections.get(id=request.GET['end'])
+            end = road_network["intersections"][request.GET['end']]
         if "edge" in request.GET:
             num_edge = int(request.GET['edge'])
         if "shake" in request.GET:
