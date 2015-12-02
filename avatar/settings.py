@@ -115,3 +115,6 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Avatar configurations
+AVATAR_ROAD_CANDIDATES_OF_MAP_MATCHING = 20

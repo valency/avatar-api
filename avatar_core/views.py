@@ -31,6 +31,13 @@ class RoadViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
+def init(request):
+    for road_network in RoadNetwork.objects.all():
+        create_cache_for_road_network(road_network.id)
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
 def demo_result(request):
     if 'id' in request.GET:
         result = AsyncResult(request.GET["id"])

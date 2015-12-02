@@ -21,7 +21,7 @@ def find_candidate_road_by_p(request):
         if 'dist' in request.GET:
             dist = float(request.GET['dist'])
         candidate_rids = []
-        candidates = find_candidates_from_road(road_network, p)
+        candidates = find_candidates_from_road(road_network, p)[:settings.AVATAR_ROAD_CANDIDATES_OF_MAP_MATCHING]
         for candidate in candidates:
             if candidate["dist"] < dist:
                 candidate_rids.append(candidate["rid"])

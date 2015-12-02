@@ -31,5 +31,7 @@ urlpatterns = [
     url(r'road_network/graph/shortest_path/create/$', views.create_shortest_path_index),
     # Celery related
     url(r'demo/$', views.demo),
-    url(r'demo/result/$', views.demo_result)
+    url(r'demo/result/$', views.demo_result),
+    # System related
+    url(r'init/$', views.init),
 ]
