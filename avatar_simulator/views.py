@@ -3,14 +3,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from synthetic_traj_generator import *
+from avatar_core.cache import *
 
 
 @api_view(['GET'])
 def generate_synthetic_trajectory(request):
-    if "city" in request.GET and "traj" in request.GET and "point" in request.GET and 'map' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
-        map_file = open(request.GET['map'], "r")
-        road_network = json.loads(map_file.readline())
+    if "city" in request.GET and "traj" in request.GET and "point" in request.GET:
+        road_network = get_road_network_by_id(request.GET['city'])
         num_traj = int(request.GET['traj'])
         num_sample = int(request.GET['point'])
         sample_rate = 60
@@ -22,9 +21,9 @@ def generate_synthetic_trajectory(request):
         if "sample" in request.GET:
             sample_rate = float(request.GET['sample'])
         if "start" in request.GET:
-            start = city.intersections.get(id=request.GET['start'])
+            start = road_network["intersections"][request.GET['start']]
         if "end" in request.GET:
-            end = city.intersections.get(id=request.GET['end'])
+            end = road_network["intersections"][request.GET['end']]
         if "edge" in request.GET:
             num_edge = int(request.GET['edge'])
         if "shake" in request.GET:

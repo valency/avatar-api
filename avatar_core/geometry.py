@@ -44,7 +44,7 @@ class Distance:
         pp1_lat = p0["lat"] - p1["lat"]
         pp1_lng = p0["lng"] - p1["lng"]
         c1_vector = pp1_lat * seg_lat + pp1_lng * seg_lng
-        mapped_p = {}
+        mapped_p = dict()
         if c1_vector <= 0:
             # mapped_p = Point(lat=p1["lat"], lng=p1["lng"])
             mapped_p["lat"] = p1["lat"]

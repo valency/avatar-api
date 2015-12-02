@@ -1,11 +1,8 @@
-import json
 import random
+import uuid
 from datetime import *
 
-from networkx.readwrite import json_graph
-
 from avatar_map_matching.hmm import *
-from avatar_core.serializers import *
 
 
 def time_generator():
@@ -32,7 +29,7 @@ def shortest_path_generator(road_network, graph, start, end, num_edge, prev_rid)
             source = start["id"]
         else:
             intersections = road_network["intersections"]
-            source = intersections[random.randint(0, len(intersections)) - 1]["id"]
+            source = intersections.keys()[random.randint(0, len(intersections)) - 1]
         # Select the target intersections with the right path length to source
         target_set = []
         path_set = networkx.single_source_shortest_path(graph, source, num_edge)
@@ -103,7 +100,7 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
         if settings.DEBUG:
             print "Current location is (" + str(point["lat"]) + "," + str(point["lng"]) + ")..."
         # Will not reach the next shape point
-        if distance <= Distance.earth_dist(point, next_p):
+        if distance <= Distance.earth_dist(point, p_set[next_l]):
             if settings.DEBUG:
                 print "Will not reach the next shape point..."
             if long_seg == 1:
@@ -116,14 +113,14 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                     print "Length of road " + str(road["id"]) + " is " + str(road["length"])
                 # Randomly decide the remaining distance of the last road segment
                 remain_dis = random.randint(int(distance) / 2, int(distance))
-            k = remain_dis / Distance.earth_dist(point, next_p)
+            k = remain_dis / Distance.earth_dist(point, p_set[next_l])
             next_lat = point["lat"] + k * (p_set[next_l]["lat"] - point["lat"])
             next_lng = point["lng"] + k * (p_set[next_l]["lng"] - point["lng"])
             distance = 0
             if settings.DEBUG:
                 print "Finally stays between " + str(location) + "th shape point(" + str(p_set[location]["lat"]) + "," + str(p_set[location]["lng"]) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
         else:
-            distance -= Distance.earth_dist(point, next_p)
+            distance -= Distance.earth_dist(point, p_set[next_l])
             point = p_set[next_l]
             if settings.DEBUG:
                 print "The location of next intersection is (" + str(next_sec["p"]["lat"]) + "," + str(next_sec["p"]["lng"]) + ")"
@@ -175,7 +172,7 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
     next_p = {"lat": next_lat, "lng": next_lng}
     if settings.DEBUG:
         print "Point location is (" + str(next_p["lat"]) + "," + str(next_p["lng"]) + ")"
-    dis_to_go = abs(Distance.length_to_start(next_p, road) - Distance.length_to_start(next_sec, road))
+    dis_to_go = abs(Distance.length_to_start(next_p, road) - Distance.length_to_start(next_sec["p"], road))
     if settings.DEBUG:
         print "Remaining distance on this road is " + str(dis_to_go)
     return [next_p, road, location, path_index, next_sec, move_path]
@@ -205,7 +202,7 @@ def add_noise(point, road, shake):
 def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, shake, missing_rate):
     if settings.DEBUG:
         print "Building road network graph..."
-    graph = json_graph.node_link_graph(json.loads(road_network["graph"]))
+    graph = json_graph.node_link_graph(road_network["graph"])
     traj_set = []
     ground_truth = []
     path_len = []
@@ -251,7 +248,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                         path[1] += sub_path[1]
                         prev_rid = path[1][len(path[1]) - 1]
                 else:
-                    neighbor = networkx.single_source_shortest_path(graph, source, 1)
+                    neighbor = networkx.single_source_shortest_path(graph, start["id"], 1)
                     # road_set = road_network.roads.filter(intersection__id__exact=start.id)
                     if settings.DEBUG:
                         print neighbor
@@ -278,7 +275,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 remain_num_edge = num_edge
                 start = ini_start
                 prev_rid = None
-        if start is None and end is not None:
+        if ini_start is None and end is not None:
             path.reverse()
         # Generate the first sample
         if settings.DEBUG:
@@ -300,7 +297,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ini_sample = Sample(id=ini_sample_id, p=ini_p_db, t=ini_time, speed=0, angle=0, occupy=0, src=0)
         ini_sample.save()
         traj.trace.p.add(ini_sample)
-        traj_rids.append([ini_road.id, [0]])
+        traj_rids.append([ini_road["id"], [0]])
         # Save the current information for generating the next sample
         prev_p = ini_p[0]
         prev_road = ini_road
@@ -325,7 +322,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         prev_l = ini_p[1]
         prev_path_index = 0
         prev_time = ini_time
-        ini_dis = abs(Distance.length_to_start(ini_p, ini_road) - Distance.length_to_start(ini_sec, ini_road))
+        ini_dis = abs(Distance.length_to_start(ini_p[0], ini_road) - Distance.length_to_start(ini_sec["p"], ini_road))
         avg_length = int((path[0] - ini_dis) / (num_sample - 1))
         if settings.DEBUG:
             print "Average length between each two sample is " + str(avg_length)
@@ -370,4 +367,6 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ground_truth.append(traj_rids)
         if settings.DEBUG:
             print path
+        # Reset the temporal variable for generating next trajectory
+        start = ini_start
     return [traj_set, ground_truth, path_len]
