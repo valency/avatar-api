@@ -15,8 +15,7 @@ def find_candidate_road_by_p(request):
     if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         # city = RoadNetwork.objects.get(id=request.GET['city'])
         road_network = get_road_network_by_id(request.GET['city'])
-        point = Point(lat=float(request.GET['lat']), lng=float(request.GET['lng']))
-        p = PointSerializer(point).data
+        p = {"lat": float(request.GET['lat']), "lng": float(request.GET['lng'])}
         dist = 500.0
         if 'dist' in request.GET:
             dist = float(request.GET['dist'])
