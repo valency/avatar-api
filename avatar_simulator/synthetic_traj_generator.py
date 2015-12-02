@@ -279,7 +279,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                 remain_num_edge = num_edge
                 start = ini_start
                 prev_rid = None
-        if start is None and end is not None:
+        if ini_start is None and end is not None:
             path.reverse()
         # Generate the first sample
         if settings.DEBUG:
@@ -371,4 +371,6 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ground_truth.append(traj_rids)
         if settings.DEBUG:
             print path
+        # Reset the temporal variable for generating next trajectory
+        start = ini_start
     return [traj_set, ground_truth, path_len]
