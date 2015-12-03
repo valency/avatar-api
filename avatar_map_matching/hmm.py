@@ -23,15 +23,24 @@ def find_candidates_from_road(road_network, point):
         lng_index = int((point["lng"] - road_network["pmin"]["lng"]) / unit_lng)
         if settings.DEBUG:
             print "The point is located in grid (" + str(lat_index) + "," + str(lng_index) + ")"
-        for i in range(lat_index - 1 if lat_index > 0 else 0, lat_index + 2 if lat_index + 1 < road_network["grid_lat_count"] else road_network["grid_lat_count"]):
-            for j in range(lng_index - 1 if lng_index > 0 else 0, lng_index + 2 if lng_index + 1 < road_network["grid_lng_count"] else road_network["grid_lng_count"]):
-                grid = road_network["grid_cells"][str(i)][str(j)]
-                for road in grid["roads"]:
-                    candidate = Distance.point_map_to_road(point, road)
-                    candidate["rid"] = road["id"]
-                    if road["id"] not in rids:
-                        candidates.append(candidate)
-                        rids.append(road["id"])
+        grid = road_network["grid_cells"][str(lat_index)][str(lng_index)]
+        if len(grid["roads"]) >= settings.AVATAR_ROAD_CANDIDATES_OF_MAP_MATCHING:
+            for road in grid["roads"]:
+                candidate = Distance.point_map_to_road(point, road)
+                candidate["rid"] = road["id"]
+                if road["id"] not in rids:
+                    candidates.append(candidate)
+                    rids.append(road["id"])
+        else:
+            for i in range(lat_index - 1 if lat_index > 0 else 0, lat_index + 2 if lat_index + 1 < road_network["grid_lat_count"] else road_network["grid_lat_count"]):
+                for j in range(lng_index - 1 if lng_index > 0 else 0, lng_index + 2 if lng_index + 1 < road_network["grid_lng_count"] else road_network["grid_lng_count"]):
+                    grid = road_network["grid_cells"][str(i)][str(j)]
+                    for road in grid["roads"]:
+                        candidate = Distance.point_map_to_road(point, road)
+                        candidate["rid"] = road["id"]
+                        if road["id"] not in rids:
+                            candidates.append(candidate)
+                            rids.append(road["id"])
         candidates.sort(key=lambda x: x["dist"])
     if settings.DEBUG:
         print "# of Candidates = " + str(len(candidates))
