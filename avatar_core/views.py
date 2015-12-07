@@ -11,8 +11,8 @@ from networkx.readwrite import json_graph
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from cache import *
+
 from geometry import *
 from serializers import *
 
@@ -31,10 +31,12 @@ class RoadViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
-def init(request):
-    for road_network in RoadNetwork.objects.all():
-        create_cache_for_road_network(road_network.id)
-    return Response(status=status.HTTP_200_OK)
+def init_road_network_in_memory(request):
+    if 'id' in request.GET:
+        get_road_network_by_id(request.GET["id"])
+        return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

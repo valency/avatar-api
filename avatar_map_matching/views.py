@@ -14,6 +14,7 @@ from models import *
 def find_candidate_road_by_p(request):
     if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         # city = RoadNetwork.objects.get(id=request.GET['city'])
+        start = time.time()
         road_network = get_road_network_by_id(request.GET['city'])
         p = {"lat": float(request.GET['lat']), "lng": float(request.GET['lng'])}
         dist = 500.0
@@ -28,6 +29,8 @@ def find_candidate_road_by_p(request):
                 candidate_rids.append(candidate["rid"])
             else:
                 break
+        end = time.time()
+        print "Finding candidate roads takes " + str(end - start) + " seconds..."
         return Response(candidate_rids)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

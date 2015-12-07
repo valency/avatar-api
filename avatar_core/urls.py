@@ -33,5 +33,5 @@ urlpatterns = [
     url(r'demo/$', views.demo),
     url(r'demo/result/$', views.demo_result),
     # System related
-    url(r'init/$', views.init),
+    url(r'init/$', views.init_road_network_in_memory),
 ]

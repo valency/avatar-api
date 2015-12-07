@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 
 import networkx
 from django.conf import settings
@@ -7,6 +8,7 @@ from networkx.readwrite import json_graph
 
 from avatar_core.geometry import *
 from models import *
+from django.core.cache import cache
 
 
 def find_candidates_from_road(road_network, point):
@@ -24,6 +26,8 @@ def find_candidates_from_road(road_network, point):
         if settings.DEBUG:
             print "The point is located in grid (" + str(lat_index) + "," + str(lng_index) + ")"
         grid = road_network["grid_cells"][str(lat_index)][str(lng_index)]
+        # grid_str = cache.get("avatar_road_network_" + road_network["city"] + "_grid_cell_" + str(lat_index) + "_" + str(lng_index))
+        # grid = json.loads(grid_str)
         if len(grid["roads"]) >= settings.AVATAR_ROAD_CANDIDATES_OF_MAP_MATCHING:
             for road in grid["roads"]:
                 candidate = Distance.point_map_to_road(point, road)
@@ -35,6 +39,8 @@ def find_candidates_from_road(road_network, point):
             for i in range(lat_index - 1 if lat_index > 0 else 0, lat_index + 2 if lat_index + 1 < road_network["grid_lat_count"] else road_network["grid_lat_count"]):
                 for j in range(lng_index - 1 if lng_index > 0 else 0, lng_index + 2 if lng_index + 1 < road_network["grid_lng_count"] else road_network["grid_lng_count"]):
                     grid = road_network["grid_cells"][str(i)][str(j)]
+                    # grid_str = cache.get("avatar_road_network_" + road_network["city"] + "_grid_cell_" + str(i) + "_" + str(j))
+                    # grid = json.loads(grid_str)
                     for road in grid["roads"]:
                         candidate = Distance.point_map_to_road(point, road)
                         candidate["rid"] = road["id"]
