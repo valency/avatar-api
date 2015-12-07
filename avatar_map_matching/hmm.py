@@ -259,7 +259,6 @@ class HmmMapMatching:
         for first in self.emission_prob[0]:
             ini_prob.append(Decimal(first))
         self.map_matching_prob.append(ini_prob)
-        print len(self.transition_prob)
         for t in range(len(self.transition_prob)):
             state_prob = []
             prev_index = []
@@ -323,16 +322,13 @@ class HmmMapMatching:
         hmm_path_rids.reverse()
         hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
+        return [hmm_path_rids, connect_routes, hmm_path_dist]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
         r_index_set = dict()
         # p_list = trace.p.all().order_by("t")
         p_list = trace["p"]
         p_list.sort(key=lambda d: d["t"])
-        # candidate_map = []
-        chosen_index = []
-        ini_prob = []
         # Find the index of the candidate road for each query sample
         for p_index in action_set:
             # If the chosen road is not in the top rank list of the chosen point, replace the last candidate with the chosen road
@@ -379,8 +375,6 @@ class HmmMapMatching:
                         self.emission_prob[t][i] = 1.0
                     else:
                         self.emission_prob[t][i] = 0.0
-        if settings.DEBUG:
-            print self.emission_prob
 
     def perform_map_matching(self, road_network, trace, rank):
         if settings.DEBUG:
@@ -392,13 +386,14 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'beta': beta}
+        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2]}
 
-    def reperform_map_matching(self, road_network, trace, rank, action_set, beta):
+    def reperform_map_matching(self, road_network, trace, rank, action_set):
         if settings.DEBUG:
             print "Building road network graph..."
         graph = json_graph.node_link_graph(road_network["graph"])
         shortest_path_index = road_network["shortest_path_index"]
+        beta = self.hmm_prob_model(road_network, graph, shortest_path_index, trace, rank)
         if settings.DEBUG:
             print "Reperform map matching with human label..."
         self.hmm_with_label(road_network, graph, shortest_path_index, trace, rank, action_set, beta)
@@ -406,7 +401,7 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'mm_prob': self.map_matching_prob, 'bf_prob': self.brute_force_prob}
+        return {'path': sequence[0], 'route': sequence[1]}
 
     def save_hmm_path_to_database(self, road_network_db, trace_id, hmm_result):
         hmm_path = Path(id=trace_id)
