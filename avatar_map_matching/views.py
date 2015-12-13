@@ -56,6 +56,9 @@ def map_matching(request):
         print "Map matching task takes " + str(end - start) + " seconds..."
         return Response({
             "traj": TrajectorySerializer(traj).data,
+            "emission_prob": hmm_result["emission_prob"],
+            "transition_prob": hmm_result["transition_prob"],
+            "path_index": hmm_result["path_index"],
             "dist": hmm_result['dist']
         })
     else:

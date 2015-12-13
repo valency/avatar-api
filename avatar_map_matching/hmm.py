@@ -322,7 +322,7 @@ class HmmMapMatching:
         hmm_path_rids.reverse()
         hmm_path_dist.reverse()
         connect_routes.reverse()
-        return [hmm_path_rids, connect_routes, hmm_path_dist]
+        return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
         r_index_set = dict()
@@ -386,7 +386,7 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2]}
+        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob}
 
     def reperform_map_matching(self, road_network, trace, rank, action_set):
         if settings.DEBUG:
