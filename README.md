@@ -37,7 +37,7 @@ psql -h localhost -U postgres postgres -c "CREATE DATABASE avatar;"
 ```
 sudo vim /etc/nginx/nginx.conf
 ```
-Added `client_max_body_size 1024m;` to `http` section.
+Add `client_max_body_size 1024m;` to `http` section.
 ```
 sudo vim /etc/nginx/sites-available/default
 ```
