@@ -4,8 +4,8 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^avatar/', include('avatar_core.urls')),
-    url(r'^avatar/user/', include('avatar_user.urls')),
-    url(r'^avatar/map-matching/', include('avatar_map_matching.urls')),
-    url(r'^avatar/simulator/', include('avatar_simulator.urls'))
+    url(r'^', include('avatar_core.urls')),
+    url(r'^user/', include('avatar_user.urls')),
+    url(r'^map-matching/', include('avatar_map_matching.urls')),
+    url(r'^simulator/', include('avatar_simulator.urls'))
 ]
