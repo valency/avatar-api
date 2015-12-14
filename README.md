@@ -35,9 +35,13 @@ psql -h localhost -U postgres postgres -c "CREATE DATABASE avatar;"
 ```
 ### Configure NGINX
 ```
+sudo vim /etc/nginx/nginx.conf
+```
+Add `client_max_body_size 1024m;` to `http` section.
+```
 sudo vim /etc/nginx/sites-available/default
 ```
-Under `server` configurations, disable the settings of `root` and `location /`, and then add the following locations: 
+Under `server` section, disable the settings of `root` and `location /`, and then add the following settings: 
 ```
 location / {
   proxy_pass http://127.0.0.1:8080/;
