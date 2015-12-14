@@ -28,7 +28,6 @@ INSTALLED_APPS = (
     'rest_framework',
     'kombu.transport.django',
     'djcelery',
-    'mptt',
     'avatar',
     'avatar_core',
     'avatar_user',
