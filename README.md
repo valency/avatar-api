@@ -84,11 +84,20 @@ sudo pip install statsmodels
 sudo pip install Django djangorestframework django-filter django-cors-headers django-queryset-csv
 sudo pip install Celery django-celery
 ```
-### Migrate Database
+### Install Avatar API
 ```
+mkdir /var/www/api/
+git clone git@github.com:valency/avatar-api.git /var/www/api/avatar
+cd /var/www/api/avatar
+python manage.py makemigrations avatar_core
+python manage.py makemigrations avatar_user
+python manage.py makemigrations avatar_map_matching
+python manage.py makemigrations avatar_simulator
 python manage.py migrate
+python manage.py collectstatic
 ```
 ### Start Server
 ```
+screen
 python manage.py runserver 0.0.0.0:9001
 ```
