@@ -86,15 +86,13 @@ sudo pip install Celery django-celery
 ```
 ### Install Avatar API
 ```
-mkdir /var/www/api/
-git clone git@github.com:valency/avatar-api.git /var/www/api/avatar
-cd /var/www/api/avatar
 python manage.py makemigrations avatar_core
 python manage.py makemigrations avatar_user
 python manage.py makemigrations avatar_map_matching
 python manage.py makemigrations avatar_simulator
 python manage.py migrate
 python manage.py collectstatic
+mv static /var/www/html
 ```
 ### Start Server
 ```
