@@ -310,18 +310,23 @@ class HmmMapMatching:
                 connect_routes.append(connect_route)
             # Reperform map matching
             else:
-                prev_road = road_network["roads"][prev_rid]
-                current_rid = self.candidate_rid[i][current_index]
-                current_road = road_network["roads"][current_rid]
-                prev_p_map = Distance.point_map_to_road(p_list[i - 1]["p"], prev_road)
-                current_p_map = Distance.point_map_to_road(p_list[i]["p"], current_road)
-                connect_route = get_route_dist(graph, shortest_path_index, prev_p_map["mapped"], prev_road, current_p_map["mapped"], current_road)
-                connect_routes.append(connect_route[1])
+                print "Impossible Error!"
+                exit()
+                # prev_road = road_network["roads"][prev_rid]
+                # current_rid = self.candidate_rid[i][current_index]
+                # current_road = road_network["roads"][current_rid]
+                # prev_p_map = Distance.point_map_to_road(p_list[i - 1]["p"], prev_road)
+                # current_p_map = Distance.point_map_to_road(p_list[i]["p"], current_road)
+                # connect_route = get_route_dist(graph, shortest_path_index, prev_p_map["mapped"], prev_road, current_p_map["mapped"], current_road)
+                # connect_routes.append(connect_route[1])
             current_index = prev_index
         hmm_path_index.reverse()
         hmm_path_rids.reverse()
         hmm_path_dist.reverse()
         connect_routes.reverse()
+        if settings.DEBUG:
+            print hmm_path_rids
+            print connect_routes
         return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
@@ -337,32 +342,39 @@ class HmmMapMatching:
                 p_map = Distance.point_map_to_road(p_list[p_index]["p"], current_road)
                 if p_index != 0:
                     for c in range(rank):
-                        prev_road = road_network["roads"][self.candidate_rid[p_index - 1][c]]
-                        prev_p_map = Distance.point_map_to_road(p_list[p_index - 1]["p"], prev_road)
-                        route = get_route_dist(graph, shortest_path_index, prev_p_map["mapped"], prev_road, p_map["mapped"], current_road)
-                        tran_dist = abs(Distance.earth_dist(p_list[p_index]["p"], p_list[p_index - 1]["p"]) - route[0])
-                        tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
-                        if tran_prob >= 1.0:
-                            tran_prob = 1.0 - float(1e-16)
-                        if tran_prob <= 0.0:
-                            tran_prob = float(1e-300)
-                        self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
-                        if settings.DEBUG:
-                            print "Transition probability: " + str(tran_prob)
+                        # None is the dummy value added while building candidate table
+                        if self.candidate_rid[p_index - 1][c] is not None:
+                            prev_road = road_network["roads"][self.candidate_rid[p_index - 1][c]]
+                            prev_p_map = Distance.point_map_to_road(p_list[p_index - 1]["p"], prev_road)
+                            route = get_route_dist(graph, shortest_path_index, prev_p_map["mapped"], prev_road, p_map["mapped"], current_road)
+                            tran_dist = abs(Distance.earth_dist(p_list[p_index]["p"], p_list[p_index - 1]["p"]) - route[0])
+                            tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                            if tran_prob >= 1.0:
+                                tran_prob = 1.0 - float(1e-16)
+                            if tran_prob <= 0.0:
+                                tran_prob = float(1e-300)
+                            self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
+                            self.transition_route[p_index - 1][rank - 1][c] = route[1]
+                            if settings.DEBUG:
+                                print "Transition probability: " + str(tran_prob)
                 if p_index != len(p_list) - 1:
                     for c in range(rank):
-                        next_road = road_network["roads"][self.candidate_rid[p_index + 1][c]]
-                        next_p_map = Distance.point_map_to_road(p_list[p_index + 1]["p"], next_road)
-                        route = get_route_dist(graph, shortest_path_index, p_map["mapped"], current_road, next_p_map["mapped"], next_road)
-                        tran_dist = abs(Distance.earth_dist(p_list[p_index]["p"], p_list[p_index + 1]["p"]) - route[0])
-                        tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
-                        if tran_prob >= 1.0:
-                            tran_prob = 1.0 - float(1e-16)
-                        if tran_prob <= 0.0:
-                            tran_prob = float(1e-300)
-                        self.transition_prob[p_index][rank - 1][c] = tran_prob
-                        if settings.DEBUG:
-                            print "Transition probability: " + str(tran_prob)
+                        if self.candidate_rid[p_index + 1][c] is not None:
+                            if settings.DEBUG:
+                                print self.candidate_rid[p_index + 1]
+                            next_road = road_network["roads"][self.candidate_rid[p_index + 1][c]]
+                            next_p_map = Distance.point_map_to_road(p_list[p_index + 1]["p"], next_road)
+                            route = get_route_dist(graph, shortest_path_index, p_map["mapped"], current_road, next_p_map["mapped"], next_road)
+                            tran_dist = abs(Distance.earth_dist(p_list[p_index]["p"], p_list[p_index + 1]["p"]) - route[0])
+                            tran_prob = 1.0 / beta * math.exp(-tran_dist / beta)
+                            if tran_prob >= 1.0:
+                                tran_prob = 1.0 - float(1e-16)
+                            if tran_prob <= 0.0:
+                                tran_prob = float(1e-300)
+                            self.transition_prob[p_index][rank - 1][c] = tran_prob
+                            self.transition_route[p_index][rank - 1][c] = route[1]
+                            if settings.DEBUG:
+                                print "Transition probability: " + str(tran_prob)
                 self.candidate_rid[p_index][rank - 1] = action_set[p_index]
                 r_index_set[p_index] = rank - 1
             else:
@@ -373,6 +385,8 @@ class HmmMapMatching:
                 if t in action_set:
                     if i == r_index_set[t]:
                         self.emission_prob[t][i] = 1.0
+                        if settings.DEBUG:
+                            print self.candidate_rid[t][i]
                     else:
                         self.emission_prob[t][i] = 0.0
 
@@ -415,7 +429,10 @@ class HmmMapMatching:
         for i in range(len(hmm_result['path'])):
             if i > 0:
                 if settings.DEBUG:
-                    print hmm_result['path'][i] == hmm_result['route'][i - 1][-1]
+                    # print hmm_result['path'][i] == hmm_result['route'][i - 1][-1]
+                    if not hmm_result['path'][i] == hmm_result['route'][i - 1][-1]:
+                        print self.map_matching_prob[i]
+                        print hmm_result['path'][i]
             if i > 0 and len(hmm_result['route'][i - 1]) > 1:
                 path_fragment.p = ','.join(map(str, p_index))
                 path_fragment.save()
