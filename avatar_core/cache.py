@@ -1,11 +1,9 @@
 import json
 import time
 
-from django.core.cache import cache
 from django.utils.termcolors import colorize
 
 from serializers import *
-
 
 ROAD_NETWORK = dict()
 
@@ -14,6 +12,7 @@ def get_road_network_by_id(road_network_id):
     if not ROAD_NETWORK.has_key(road_network_id):
         ROAD_NETWORK[road_network_id] = create_road_network_dict(road_network_id)
     return ROAD_NETWORK[road_network_id]
+
 
 def create_road_network_dict(road_network_id):
     print colorize("Creating cache for road network " + road_network_id + "...", fg="green")

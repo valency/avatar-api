@@ -7,12 +7,13 @@ from celery.result import AsyncResult
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Max, Min
+from django.http import HttpResponse
 from networkx.readwrite import json_graph
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from cache import *
 
+from cache import *
 from geometry import *
 from serializers import *
 
@@ -317,12 +318,10 @@ def export_road_network_to_local_file(request):
         road_network_id = request.GET["id"]
         road_network = RoadNetwork.objects.get(id=road_network_id)
         file_name = "avatar-road-network-" + road_network.city + "-" + road_network_id + ".json"
-        f = open(MAP_UPLOAD_DIR + file_name, "w")
-        f.write(get_road_network_by_id(road_network_id))
-        f.close()
-        return Response({
-            "filename": file_name
-        })
+        content = json.dumps(get_road_network_by_id(road_network_id))
+        response = HttpResponse(content, content_type='text/json')
+        response['Content-Disposition'] = "attachment; filename=" + file_name
+        return response
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
