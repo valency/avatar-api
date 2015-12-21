@@ -1,5 +1,5 @@
 # The Avatar System: API Layer
-## Installation Guide for Ubuntu Server 14.04.3
+## Installation Guide for Ubuntu Server 15.10
 ### Install Required Packages
 ```
 sudo apt-get install lamp-server^
