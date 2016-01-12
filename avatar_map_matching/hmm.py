@@ -417,46 +417,43 @@ class HmmMapMatching:
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
         return {'path': sequence[0], 'route': sequence[1]}
 
-    def save_hmm_path_to_database(self, road_network_db, trace_id, hmm_result):
-        hmm_path = Path(id=trace_id)
-        for prev_fragment in hmm_path.road.all():
-            hmm_path.road.remove(prev_fragment)
-        hmm_path.save()
-        ini_road = road_network_db.roads.get(id=hmm_result['path'][0])
-        path_fragment = PathFragment(road=ini_road)
-        path_fragment.save()
+    def generate_hmm_path(self, trace_id, hmm_result):
+        hmm_path = dict()
+        hmm_path["id"] = trace_id
+        ini_road = {"road": {"id": hmm_result['path'][0]}, "p": None}
+        hmm_path["road"] = [ini_road]
         p_index = []
         for i in range(len(hmm_result['path'])):
             if i > 0:
                 if settings.DEBUG:
-                    # print hmm_result['path'][i] == hmm_result['route'][i - 1][-1]
                     if not hmm_result['path'][i] == hmm_result['route'][i - 1][-1]:
                         print self.map_matching_prob[i]
                         print hmm_result['path'][i]
             if i > 0 and len(hmm_result['route'][i - 1]) > 1:
-                path_fragment.p = ','.join(map(str, p_index))
-                path_fragment.save()
-                hmm_path.road.add(path_fragment)
+                road_index = ','.join(map(str, p_index))
+                hmm_path["road"][len(hmm_path["road"]) - 1]["p"] = road_index
                 p_index = []
                 if len(hmm_result['route'][i - 1]) > 2:
                     for j in range(1, len(hmm_result['route'][i - 1]) - 1):
-                        next_road = road_network_db.roads.get(id=hmm_result['route'][i - 1][j])
-                        path_fragment = PathFragment(road=next_road)
-                        path_fragment.save()
-                        hmm_path.road.add(path_fragment)
-                next_road = road_network_db.roads.get(id=hmm_result['path'][i])
-                path_fragment = PathFragment(road=next_road)
-                path_fragment.save()
-                # prev_id = sequence[0][i]
+                        next_road = {"road": {"id": hmm_result['route'][i - 1][j]}, "p": None}
+                        hmm_path["road"].append(next_road)
+                next_road = {"road": {"id": hmm_result['path'][i]}, "p": None}
+                hmm_path["road"].append(next_road)
             p_index.append(i)
-        path_fragment.p = ','.join(map(str, p_index))
-        path_fragment.save()
-        hmm_path.road.add(path_fragment)
+        road_index = ','.join(map(str, p_index))
+        hmm_path["road"][len(hmm_path["road"]) - 1]["p"] = road_index
+        return hmm_path
+
+    def save_hmm_path_to_database(self, road_network_db, trace_id, path):
+        hmm_path = Path(id=trace_id)
+        for prev_fragment in hmm_path.road.all():
+            hmm_path.road.remove(prev_fragment)
         hmm_path.save()
-        for fragment in hmm_path.road.all():
-            if settings.DEBUG:
-                print fragment.p
-            for sec in fragment.road.intersection.all():
-                if settings.DEBUG:
-                    print sec.id
+        for fragment in path["road"]:
+            road = road_network_db.roads.get(id=fragment["road"]["id"])
+            path_fragment = PathFragment(road=road)
+            if fragment["p"] is not None:
+                path_fragment.p = fragment["p"]
+            path_fragment.save()
+            hmm_path.road.add(path_fragment)
         return hmm_path

@@ -10,6 +10,8 @@ urlpatterns = [
     url(r'find_candidates/$', views.find_candidate_road_by_p),
     url(r'perform/$', views.map_matching),
     url(r'perform_with_label/$', views.reperform_map_matching),
+    url(r'save_path/$', views.save_map_matching_result),
+    url(r'save_user_history/$', views.save_user_history),
     url(r'get_hmm_path/$', views.get_hmm_path_by_traj),
     url(r'get_hmm_path_index/$', views.get_hmm_path_index_by_traj),
     url(r'get_candidate_rid/$', views.get_candidate_rid_by_traj),

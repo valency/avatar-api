@@ -181,13 +181,9 @@ def create_road_network_from_local_file(request):
 
 
 @api_view(['GET'])
-def get_traj_by_id(request):
+def get_traj_segment_by_id(request):
     if 'id' in request.GET:
-        try:
-            traj = Trajectory.objects.get(id=request.GET['id'])
-            traj = TrajectorySerializer(traj).data
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        traj = get_traj_by_id(request.GET["id"])
         if "ts" in request.GET and "td" in request.GET:
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
