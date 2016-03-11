@@ -292,3 +292,13 @@ def remove_history_by_user(request):
         return Response(status=status.HTTP_204_NO_CONTENT)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def remove_history_by_user_from_cache(request):
+    if 'id' in request.GET and 'uid' in request.GET:
+        if USER_HISTORY.has_key(request.GET['uid']) and USER_HISTORY[request.GET['uid']].has_key(request.GET['id']):
+            USER_HISTORY[request.GET['uid']].__delitem__(request.GET['id'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

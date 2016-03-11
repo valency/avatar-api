@@ -18,5 +18,6 @@ urlpatterns = [
     url(r'get_emission_table/$', views.get_emission_table_by_traj),
     url(r'get_transition_table/$', views.get_transition_table_by_traj),
     url(r'get_user_action_history/$', views.get_history_by_traj),
-    url(r'remove_user_action_history/$', views.remove_history_by_user)
+    url(r'remove_user_action_history/$', views.remove_history_by_user),
+    url(r'remove_user_action_history_from_cache/$', views.remove_history_by_user_from_cache)
 ]
