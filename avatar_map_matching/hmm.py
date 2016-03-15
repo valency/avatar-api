@@ -400,7 +400,7 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob}
+        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid}
 
     def reperform_map_matching(self, road_network, trace, rank, action_set):
         if settings.DEBUG:
