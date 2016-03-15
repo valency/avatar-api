@@ -132,7 +132,12 @@ def reperform_map_matching(request):
         # traj.save()
         end = time.time()
         print "Reperforming map matching task takes " + str(end - start) + " seconds..."
-        return Response(HMM_RESULT[request.GET['id']])
+        return Response({
+            "path": HMM_RESULT[request.GET['id']],
+            "emission_prob": hmm_result["emission_prob"],
+            "transition_prob": hmm_result["transition_prob"],
+            "candidate_rid": hmm_result["candidate_rid"]
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
