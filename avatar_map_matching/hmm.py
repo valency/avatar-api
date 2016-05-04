@@ -87,28 +87,36 @@ def get_route_dist(graph, shortest_path_index, p1, road1, p2, road2):
         p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
         return p1_cross + p2_cross, [road1["id"], road2["id"]]
     else:
-        # Assume the shortest path is between the closest intersections between two roads
-        dist_between_sec = 16777215.0
+        # Compute all the possibilities between each intersections on the two roads
         intersec1 = road1["intersection"]
         intersec2 = road2["intersection"]
-        id1 = 0
-        id2 = 0
+        min_length = 16777215.0
+        min_path = None
         for i in range(len(intersec1)):
             for j in range(len(intersec2)):
-                if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dist_between_sec:
-                    dist_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
-                    id1 = i
-                    id2 = j
-        shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[id1], intersec2[id2])
-        if shortest_path[1] is not None:
-            dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
-            dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
-            path = [road1["id"]] + shortest_path[1] + [road2["id"]]
-            length = shortest_path[0] + dist1 + dist2
-        else:
-            path = shortest_path[1]
-            length = shortest_path[0]
-        return length, path
+                shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[i], intersec2[j])
+                if shortest_path[1] is not None:
+                    path = shortest_path[1]
+                    length = shortest_path[0]
+                    if shortest_path[1][0] != road1["id"]:
+                        path = [road1["id"]] + path
+                        sec1 = intersec1[i]
+                    else:
+                        length -= road1["length"]
+                        sec1 = intersec1[len(intersec1) - 1 - i]
+                    if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
+                        path = path + [road2["id"]]
+                        sec2 = intersec2[j]
+                    else:
+                        length -= road2["length"]
+                        sec2 = intersec2[len(intersec2) - 1 - j]
+                    dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(sec1["p"], road1))
+                    dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(sec2["p"], road2))
+                    length += dist1 + dist2
+                    if length < min_length:
+                        min_length = length
+                        min_path = path
+        return min_length, min_path
 
 
 class HmmMapMatching:
@@ -327,7 +335,7 @@ class HmmMapMatching:
         if settings.DEBUG:
             print hmm_path_rids
             print connect_routes
-        return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index]
+        return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index, max(final_prob)]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
         r_index_set = dict()
@@ -400,7 +408,7 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid}
+        return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'confidence': sequence[4]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_set):
         if settings.DEBUG:
@@ -415,7 +423,7 @@ class HmmMapMatching:
             print "Implementing viterbi algorithm..."
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
-        return {'path': sequence[0], 'route': sequence[1], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid}
+        return {'path': sequence[0], 'route': sequence[1], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid}
 
     def generate_hmm_path(self, trace_id, hmm_result):
         hmm_path = dict()

@@ -243,6 +243,30 @@ def truncate_traj(request):
 
 
 @api_view(['GET'])
+def remove_p_by_traj(request):
+    if 'id' in request.GET and 'pid' in request.GET:
+        try:
+            traj = Trajectory.objects.get(id=request.GET['id'])
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        pids = request.GET['pid'].split(",")
+        # Create new trace
+        uuid_id = str(uuid.uuid4())
+        trace = Trace(id=uuid_id)
+        trace.save()
+        for sample in traj.trace.p.all().order_by("t"):
+            if sample.id not in pids:
+                trace.p.add(sample)
+        trace.save()
+        # Create new trajectory
+        modified = Trajectory(id=uuid_id, taxi=traj.taxi, trace=trace)
+        modified.save()
+        return Response(TrajectorySerializer(modified).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
 def remove_traj_by_id(request):
     if 'id' in request.GET:
         traj = Trajectory.objects.get(id=request.GET['id'])

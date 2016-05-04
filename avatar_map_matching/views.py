@@ -62,6 +62,7 @@ def map_matching(request):
             "transition_prob": hmm_result["transition_prob"],
             "path_index": hmm_result["path_index"],
             "candidate_rid": hmm_result["candidate_rid"],
+            "confidence": hmm_result["confidence"],
             "dist": hmm_result['dist']
         })
     else:
@@ -136,6 +137,7 @@ def reperform_map_matching(request):
             "path": HMM_RESULT[request.GET['id']],
             "emission_prob": hmm_result["emission_prob"],
             "transition_prob": hmm_result["transition_prob"],
+            "path_index": hmm_result["path_index"],
             "candidate_rid": hmm_result["candidate_rid"]
         })
     else:
