@@ -39,7 +39,7 @@ def find_candidate_road_by_p(request):
 @api_view(['GET'])
 def map_matching(request):
     if 'city' in request.GET and 'id' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
+        # city = RoadNetwork.objects.get(id=request.GET['city'])
         road_network = get_road_network_by_id(request.GET['city'])
         candidate_rank = 10
         if 'rank' in request.GET:
@@ -49,16 +49,20 @@ def map_matching(request):
         hmm = HmmMapMatching()
         start = time.time()
         hmm_result = hmm.perform_map_matching(road_network, trace, candidate_rank)
-        path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
-        traj.path = path
-        traj.save()
+        HMM_RESULT[request.GET['id']] = hmm.generate_hmm_path(trace["id"], hmm_result)
+        # path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
+        # traj.path = path
+        # traj.save()
         end = time.time()
         print "Map matching task takes " + str(end - start) + " seconds..."
         return Response({
-            "traj": TrajectorySerializer(traj).data,
+            # "traj": TrajectorySerializer(traj).data,
+            "path": HMM_RESULT[request.GET['id']],
             "emission_prob": hmm_result["emission_prob"],
             "transition_prob": hmm_result["transition_prob"],
             "path_index": hmm_result["path_index"],
+            "candidate_rid": hmm_result["candidate_rid"],
+            "confidence": hmm_result["confidence"],
             "dist": hmm_result['dist']
         })
     else:
@@ -68,50 +72,127 @@ def map_matching(request):
 @api_view(['GET'])
 def reperform_map_matching(request):
     if 'city' in request.GET and 'id' in request.GET and 'pid' in request.GET and 'rid' in request.GET and 'uid' in request.GET:
-        city = RoadNetwork.objects.get(id=request.GET['city'])
+        # city = RoadNetwork.objects.get(id=request.GET['city'])
+        road_network = get_road_network_by_id(request.GET['city'])
         candidate_rank = 10
         if 'rank' in request.GET:
             candidate_rank = int(request.GET['rank'])
+        pids = request.GET['pid'].split(",")
+        rids = request.GET['rid'].split(",")
+        if settings.DEBUG:
+            print request.GET['pid']
+            print "There are " + str(len(pids)) + " points in the query set..."
+        if len(pids) != len(rids):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         traj = Trajectory.objects.get(id=request.GET['id'])
-        sample = traj.trace.p.get(id=request.GET['pid'])
-        road = city.roads.get(id=request.GET['rid'])
-        user = Account.objects.get(id=request.GET['uid'])
+        # sample = traj.trace.p.get(id=request.GET['pid'])
+        # road = city.roads.get(id=request.GET['rid'])
+        # user = Account.objects.get(id=request.GET['uid'])
         # Insert the query pair into user action history
-        try:
-            action_list = UserActionHistory.objects.get(user=user, traj=traj)
-            try:
-                action = action_list.action.get(point=sample)
-                action.delete()
-            except ObjectDoesNotExist:
-                pass
-        except ObjectDoesNotExist:
-            action_list = UserActionHistory(user=user, traj=traj)
-            action_list.save()
-        action = Action(point=sample, road=road)
-        action.save()
-        action_list.action.add(action)
-        action_list.save()
+        # try:
+            # action_list = UserActionHistory.objects.get(user=user, traj=traj)
+            # try:
+                # action = action_list.action.get(point=sample)
+                # action.delete()
+            # except ObjectDoesNotExist:
+                # pass
+        # except ObjectDoesNotExist:
+            # action_list = UserActionHistory(user=user, traj=traj)
+            # action_list.save()
+        # action = Action(point=sample, road=road)
+        # action.save()
+        # action_list.action.add(action)
+        # action_list.save()
         # Load road network and trace to memory
-        road_network = get_road_network_by_id(request.GET['city'])
         trace = TraceSerializer(traj.trace).data
         # Convert action list to dictionary
-        action_set = dict()
-        p_list = traj.trace.p.all().order_by("t")
-        for action in action_list.action.all():
-            for i in range(len(p_list)):
-                if p_list[i].id == action.point.id:
-                    action_set[i] = action.road.id
+        if not USER_HISTORY.has_key(request.GET['uid']):
+            USER_HISTORY[request.GET['uid']] = dict()
+        if not USER_HISTORY[request.GET['uid']].has_key(request.GET['id']):
+            USER_HISTORY[request.GET['uid']][request.GET['id']] = dict()
+        p_list = trace["p"]
+        p_list.sort(key=lambda d: d["t"])
+        for i in range(len(pids)):
+            for j in range(len(p_list)):
+                if p_list[j]["id"] == pids[i]:
+                    USER_HISTORY[request.GET['uid']][request.GET['id']][j] = rids[i]
+        # action_set = dict()
+        # p_list = traj.trace.p.all().order_by("t")
+        # for action in action_list.action.all():
+            # for i in range(len(p_list)):
+                # if p_list[i].id == action.point.id:
+                    # action_set[i] = action.road.id
         if settings.DEBUG:
-            print action_set
+            print USER_HISTORY[request.GET['uid']][request.GET['id']]
         hmm = HmmMapMatching()
         start = time.time()
-        hmm_result = hmm.reperform_map_matching(road_network, trace, candidate_rank, action_set)
-        path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
-        traj.path = path
-        traj.save()
+        hmm_result = hmm.reperform_map_matching(road_network, trace, candidate_rank, USER_HISTORY[request.GET['uid']][request.GET['id']])
+        HMM_RESULT[request.GET['id']] = hmm.generate_hmm_path(trace["id"], hmm_result)
+        # path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
+        # traj.path = path
+        # traj.save()
         end = time.time()
         print "Reperforming map matching task takes " + str(end - start) + " seconds..."
+        return Response({
+            "path": HMM_RESULT[request.GET['id']],
+            "emission_prob": hmm_result["emission_prob"],
+            "transition_prob": hmm_result["transition_prob"],
+            "path_index": hmm_result["path_index"],
+            "candidate_rid": hmm_result["candidate_rid"]
+        })
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def save_map_matching_result(request):
+    if 'city' in request.GET and 'id' in request.GET:
+        city = RoadNetwork.objects.get(id=request.GET['city'])
+        traj = Trajectory.objects.get(id=request.GET['id'])
+        trace = TraceSerializer(traj.trace).data
+        hmm = HmmMapMatching()
+        path = hmm.save_hmm_path_to_database(city, trace["id"], HMM_RESULT[request.GET['id']])
+        traj.path = path
+        traj.save()
+        # Clear cache
+        HMM_RESULT.__delitem__(request.GET['id'])
         return Response(TrajectorySerializer(traj).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def save_user_history(request):
+    if 'city' in request.GET and 'id' in request.GET and 'uid' in request.GET:
+        city = RoadNetwork.objects.get(id=request.GET['city'])
+        user = Account.objects.get(id=request.GET['uid'])
+        traj = Trajectory.objects.get(id=request.GET['id'])
+        p_list = traj.trace.p.all().order_by("t")
+        if USER_HISTORY.has_key(request.GET['uid']):
+            if USER_HISTORY[request.GET['uid']].has_key(request.GET['id']):
+                for p_index in USER_HISTORY[request.GET['uid']][request.GET['id']]:
+                    sample = traj.trace.p.get(id=p_list[p_index].id)
+                    road = city.roads.get(id=USER_HISTORY[request.GET['uid']][request.GET['id']][p_index])
+                    try:
+                        history = UserActionHistory.objects.get(user=user, traj=traj)
+                        try:
+                            action = history.action.get(point=sample)
+                            action.delete()
+                        except ObjectDoesNotExist:
+                            pass
+                    except ObjectDoesNotExist:
+                        history = UserActionHistory(user=user, traj=traj)
+                        history.save()
+                    action = Action(point=sample, road=road)
+                    action.save()
+                    history.action.add(action)
+                    history.save()
+                # Clear cache
+                USER_HISTORY[request.GET['uid']].__delitem__(request.GET['id'])
+        action_list = []
+        for action in history.action.all():
+            action_list.append(action.__str__())
+        return Response(action_list)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -216,6 +297,16 @@ def remove_history_by_user(request):
         for action in history.action.all():
             action.delete()
         history.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def remove_history_by_user_from_cache(request):
+    if 'id' in request.GET and 'uid' in request.GET:
+        if USER_HISTORY.has_key(request.GET['uid']) and USER_HISTORY[request.GET['uid']].has_key(request.GET['id']):
+            USER_HISTORY[request.GET['uid']].__delitem__(request.GET['id'])
         return Response(status=status.HTTP_204_NO_CONTENT)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -182,7 +182,7 @@ def add_noise(point, road, shake):
     delta = 33.6833599047  # Distribution parameter from real dataset
     noise_dist = random.gauss(0, delta * shake)
     while noise_dist >= 1436:  # Observed largest distance error
-        noise_dist = abs(random.gauss(0, delta + shake))
+        noise_dist = random.gauss(0, delta * shake)
     p_location = Distance.point_location(point, road)
     p1 = road["p"][p_location]
     p2 = road["p"][p_location + 1]
@@ -195,6 +195,18 @@ def add_noise(point, road, shake):
     else:
         noised_lat = point["lat"] + lat_dir * delta_lat
         noised_lng = point["lng"] + lat_dir * delta_lng
+    noised_p = {"lat": noised_lat, "lng": noised_lng}
+    return noised_p
+
+
+def add_random_noise(point, shake, bound):
+    delta = 33.6833599047
+    noise_dist = random.gauss(0, delta * shake)
+    while noise_dist >= 1436 or noise_dist < bound:
+        noise_dist = random.gauss(0, delta * shake)
+    angle = random.randint(0, 360)
+    noised_lat = point["lat"] + noise_dist / Distance.earth_radius * math.sin(angle)
+    noised_lng = point["lng"] + noise_dist / Distance.earth_radius * math.cos(angle)
     noised_p = {"lat": noised_lat, "lng": noised_lng}
     return noised_p
 
@@ -370,3 +382,27 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         # Reset the temporal variable for generating next trajectory
         start = ini_start
     return [traj_set, ground_truth, path_len]
+
+
+def synthetic_traj_refactor(traj, pids, shake, bound):
+    # Create new trace
+    uuid_id = str(uuid.uuid4())
+    trace = Trace(id=uuid_id)
+    trace.save()
+    for sample in traj["trace"]["p"]:
+        if sample["id"] in pids:
+            next_p = add_random_noise(sample["p"], shake, bound)
+        else:
+            next_p = sample["p"]
+        next_p_db = Point(lat=next_p["lat"], lng=next_p["lng"])
+        next_p_db.save()
+        next_sample_id = str(uuid.uuid4())
+        next_sample = Sample(id=next_sample_id, p=next_p_db, t=sample["t"], speed=0, angle=0, occupy=0, src=0)
+        next_sample.save()
+        trace.p.add(next_sample)
+    trace.save()
+    # Create new trajectory
+    taxi = str(uuid.uuid4())
+    new_traj = Trajectory(id=uuid_id, taxi=taxi, trace=trace)
+    new_traj.save()
+    return new_traj.id

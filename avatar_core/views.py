@@ -182,13 +182,9 @@ def create_road_network_from_local_file(request):
 
 
 @api_view(['GET'])
-def get_traj_by_id(request):
+def get_traj_segment_by_id(request):
     if 'id' in request.GET:
-        try:
-            traj = Trajectory.objects.get(id=request.GET['id'])
-            traj = TrajectorySerializer(traj).data
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        traj = get_traj_by_id(request.GET["id"])
         if "ts" in request.GET and "td" in request.GET:
             ts = datetime.strptime(request.GET["ts"], "%H:%M:%S").time()
             td = datetime.strptime(request.GET["td"], "%H:%M:%S").time()
@@ -243,6 +239,30 @@ def truncate_traj(request):
             return Response(TrajectorySerializer(truncated).data)
         else:
             return Response(TrajectorySerializer(traj).data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def remove_p_by_traj(request):
+    if 'id' in request.GET and 'pid' in request.GET:
+        try:
+            traj = Trajectory.objects.get(id=request.GET['id'])
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        pids = request.GET['pid'].split(",")
+        # Create new trace
+        uuid_id = str(uuid.uuid4())
+        trace = Trace(id=uuid_id)
+        trace.save()
+        for sample in traj.trace.p.all().order_by("t"):
+            if sample.id not in pids:
+                trace.p.add(sample)
+        trace.save()
+        # Create new trajectory
+        modified = Trajectory(id=uuid_id, taxi=traj.taxi, trace=trace)
+        modified.save()
+        return Response(TrajectorySerializer(modified).data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

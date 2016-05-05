@@ -6,6 +6,8 @@ from django.utils.termcolors import colorize
 from serializers import *
 
 ROAD_NETWORK = dict()
+HMM_RESULT = dict()
+USER_HISTORY = dict()
 
 
 def get_road_network_by_id(road_network_id):
@@ -49,3 +51,14 @@ def create_road_network_dict(road_network_id):
     end = time.time()
     print "Saving road network to memory takes " + str(end - start) + " seconds..."
     return road_network_dict
+
+def get_traj_by_id(traj_id):
+    traj = Trajectory.objects.get(id=traj_id)
+    traj = TrajectorySerializer(traj).data
+    if HMM_RESULT.has_key(traj_id):
+        traj["path"] = HMM_RESULT[traj_id]
+        for fragment in traj["path"]["road"]:
+            road = Road.objects.get(id=fragment["road"]["id"])
+            road_data = RoadSerializer(road).data
+            fragment["road"] = road_data
+    return traj

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from synthetic_traj_generator import *
 from avatar_core.cache import *
+from django.core.exceptions import ObjectDoesNotExist
 
 
 @api_view(['GET'])
@@ -40,5 +41,27 @@ def generate_synthetic_trajectory(request):
             "ground_truth": result[1],
             "path_length": result[2]
         })
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def refactor_synthetic_trajectory(request):
+    if 'id' in request.GET and 'pid' in request.GET:
+        try:
+            traj = Trajectory.objects.get(id=request.GET['id'])
+            traj_data = TrajectorySerializer(traj).data
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        pids = request.GET['pid'].split(",")
+        shake = 1.0
+        if "shake" in request.GET:
+            shake = float(request.GET['shake'])
+        bound = 0
+        if "bound" in request.GET:
+            bound = int(request.GET['bound'])
+        new_traj_id = synthetic_traj_refactor(traj_data, pids, shake, bound)
+        new_traj = Trajectory.objects.get(id=new_traj_id)
+        return Response(TrajectorySerializer(new_traj).data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
