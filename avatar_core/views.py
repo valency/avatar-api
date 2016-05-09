@@ -13,8 +13,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from cache import *
 
-from geometry import *
 from serializers import *
+from pre_process import *
 
 MAP_UPLOAD_DIR = "/var/www/html/avatar/data/map/"
 TRAJ_UPLOAD_DIR = "/var/www/html/avatar/data/trajectory/"
@@ -461,5 +461,85 @@ def get_graph_by_road_network_id(request):
     if 'id' in request.GET:
         road_network = RoadNetwork.objects.get(id=request.GET["id"])
         return Response(json.loads(road_network.graph))
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def transplant_road_network(request):
+    merged_secs = dict()
+
+    def find_orig_intersection_id(sec1, sec2, road):
+        sec_map = dict()
+        for sec in road.intersection.all():
+            if sec1 in merged_secs and sec.id in merged_secs[sec1]:
+                sec_map[sec.id] = sec1
+            elif sec2 in merged_secs and sec.id in merged_secs[sec2]:
+                sec_map[sec.id] = sec2
+            else:
+                sec_map[sec.id] = sec.id
+        return sec_map
+
+    def check_intersection_by_p(p, road):
+        for sec in road.intersecion.all():
+            if p.lat == sec.p.lat and p.lng == sec.p.lng:
+                return sec.id
+        return None
+
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        eps = 20.0
+        min_samples = 2
+        sub_cluster_bound = 5.0
+        if 'eps' in request.GET:
+            eps = float(request.GET["eps"])
+        if 'sample' in request.GET:
+            min_sample = int(request.GET["sample"])
+        if 'bound' in request.GET:
+            sub_cluster_bound = float(request.GET["bound"])
+        graph_t, merged_secs = merge_road_segments_by_road_network(road_network, eps, min_samples, sub_cluster_bound)
+        city = road_network.city + "_fixed"
+        road_network_t = RoadNetwork(city=city)
+        road_network_t.save()
+        # Append all intersections
+        for node in graph_t.nodes():
+            intersection = Intersection.objects.get(id=node)
+            road_network_t.intersections.add(intersection)
+        # Fix and append all roads
+        for edge in graph_t.edges():
+            road_id = graph_t.get_edge_data(edge[0], edge[1])["id"]
+            road = road_network.roads.get(id=road_id)
+            road_id_t = road_id + "_fixed"
+            road_t = Road(id=road_id_t)
+            road_t.save()
+            road_network_t.roads.add(road_t)
+            # Add intersections
+            for id in edge:
+                sec_t = Intersection.objects.get(id=id)
+                road_t.intersection.add(sec_t)
+            # Check whether the two intersections are merged
+            sec_map = find_orig_intersection_id(edge[0], edge[1], road)
+            # Modify points and add
+            for p in road.p.all():
+                sec_id = check_intersection_by_p(p, road)
+                # This point is an intersection
+                if sec_id is not None:
+                    loc_sec = Intersection.objects.get(id=sec_map[sec_id])
+                    p_t = Point(lat=loc_sec.p.lat, lng=loc_sec.p.lng)
+                # This point is not an intersection
+                else:
+                    p_t = Point(lat=p.lat, lng=p.lng)
+                p_t.save()
+                road_t.p.add(p_t)
+            # Calculate road length
+            road_t.length = int(Distance.road_length(RoadSerializer(road_t).data))
+        # Svae the road network
+        road_network_t.save()
+        return Response({
+                "road_network_id": road_network_t.id,
+                "road_network_name": road_network_t.city,
+                "road_count": road_network_t.roads.count(),
+                "intersection_count": road_network_t.intersections.count()
+            })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

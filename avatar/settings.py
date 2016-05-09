@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '#p94vjet9clpl+iy6u#m$^lirp9vb3r9s_#*ho$2!+9g@ly=qy'
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 # Celery settings

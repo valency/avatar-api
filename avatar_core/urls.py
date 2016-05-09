@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'road_network/export/$', views.export_road_network_to_local_file),
     url(r'road_network/get_all/$', views.get_all_road_network_id),
     url(r'road_network/remove/$', views.remove_road_network),
+    url(r'road_network/pre_process/$', views.transplant_road_network),
     # Road network clean up
     url(r'road_network/clip/$', views.clip_road_network),
     # Road network algorithm related
