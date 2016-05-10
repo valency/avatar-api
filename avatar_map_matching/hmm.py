@@ -87,36 +87,67 @@ def get_route_dist(graph, shortest_path_index, p1, road1, p2, road2):
         p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
         return p1_cross + p2_cross, [road1["id"], road2["id"]]
     else:
-        # Compute all the possibilities between each intersections on the two roads
+        # Assume the shortest path is between the closest intersections between two roads
+        dist_between_sec = 16777215.0
         intersec1 = road1["intersection"]
         intersec2 = road2["intersection"]
-        min_length = 16777215.0
-        min_path = None
+        id1 = 0
+        id2 = 0
         for i in range(len(intersec1)):
             for j in range(len(intersec2)):
-                shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[i], intersec2[j])
-                if shortest_path[1] is not None:
-                    path = shortest_path[1]
-                    length = shortest_path[0]
-                    if shortest_path[1][0] != road1["id"]:
-                        path = [road1["id"]] + path
-                        sec1 = intersec1[i]
-                    else:
-                        length -= road1["length"]
-                        sec1 = intersec1[len(intersec1) - 1 - i]
-                    if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
-                        path = path + [road2["id"]]
-                        sec2 = intersec2[j]
-                    else:
-                        length -= road2["length"]
-                        sec2 = intersec2[len(intersec2) - 1 - j]
-                    dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(sec1["p"], road1))
-                    dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(sec2["p"], road2))
-                    length += dist1 + dist2
-                    if length < min_length:
-                        min_length = length
-                        min_path = path
-        return min_length, min_path
+                if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dist_between_sec:
+                    dist_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
+                    id1 = i
+                    id2 = j
+        shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[id1], intersec2[id2])
+        if shortest_path[1] is not None:
+            dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
+            dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
+            path = shortest_path[1]
+            length = shortest_path[0]
+            if shortest_path[1][0] != road1["id"]:
+                path = [road1["id"]] + path
+            else:
+                length -= road1["length"]
+            if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
+                path = path + [road2["id"]]
+            else:
+                length -= road2["length"]
+            length += dist1 + dist2
+        else:
+            path = shortest_path[1]
+            length = shortest_path[0]
+        return length, path
+        # # Compute all the possibilities between each intersections on the two roads
+        # intersec1 = road1["intersection"]
+        # intersec2 = road2["intersection"]
+        # min_length = 16777215.0
+        # min_path = None
+        # for i in range(len(intersec1)):
+        #     for j in range(len(intersec2)):
+        #         shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[i], intersec2[j])
+        #         if shortest_path[1] is not None:
+        #             path = shortest_path[1]
+        #             length = shortest_path[0]
+        #             if shortest_path[1][0] != road1["id"]:
+        #                 path = [road1["id"]] + path
+        #                 sec1 = intersec1[i]
+        #             else:
+        #                 length -= road1["length"]
+        #                 sec1 = intersec1[len(intersec1) - 1 - i]
+        #             if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
+        #                 path = path + [road2["id"]]
+        #                 sec2 = intersec2[j]
+        #             else:
+        #                 length -= road2["length"]
+        #                 sec2 = intersec2[len(intersec2) - 1 - j]
+        #             dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(sec1["p"], road1))
+        #             dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(sec2["p"], road2))
+        #             length += dist1 + dist2
+        #             if length < min_length:
+        #                 min_length = length
+        #                 min_path = path
+        # return min_length, min_path
 
 
 class HmmMapMatching:

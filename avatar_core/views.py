@@ -112,7 +112,7 @@ def create_road_network_from_local_file(request):
         for ii in intersections:
             if ii.p.lat == pp.lat and ii.p.lng == pp.lng:
                 return ii
-        ii = Intersection(id=uuid.uuid4(), p=pp)
+        ii = Intersection(id=str(uuid.uuid4()), p=pp)
         ii.save()
         intersections.append(ii)
         return ii
@@ -481,7 +481,7 @@ def transplant_road_network(request):
         return sec_map
 
     def check_intersection_by_p(p, road):
-        for sec in road.intersecion.all():
+        for sec in road.intersection.all():
             if p.lat == sec.p.lat and p.lng == sec.p.lng:
                 return sec.id
         return None
@@ -533,6 +533,7 @@ def transplant_road_network(request):
                 road_t.p.add(p_t)
             # Calculate road length
             road_t.length = int(Distance.road_length(RoadSerializer(road_t).data))
+            road_t.save()
         # Svae the road network
         road_network_t.save()
         return Response({
