@@ -1,12 +1,12 @@
 import uuid
-from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from serializers import *
+from avatar.common import *
+from avatar_user.serializers import *
 
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -18,13 +18,13 @@ class AccountViewSet(viewsets.ModelViewSet):
 def login_or_register(request):
     if "username" in request.POST and "password" in request.POST:
         try:
-            print "Trying find user with username: " + request.POST["username"]
+            log("Trying find user with username: " + request.POST["username"])
             Account.objects.get(username=request.POST["username"])
         except ObjectDoesNotExist:
-            print "Not found, perform registration..."
+            log("Not found, perform registration...")
             perform_register(request.POST["username"], request.POST["password"])
-            print "Successfully registered."
-        print "Logging in..."
+            log("Successfully registered.")
+        log("Logging in...")
         return perform_login(request.POST["username"], request.POST["password"])
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -32,7 +32,7 @@ def login_or_register(request):
 
 @api_view(['POST'])
 def register(request):
-    print "Received registration request."
+    log("Received registration request.")
     if "username" in request.POST and "password" in request.POST:
         return perform_register(request.POST["username"], request.POST["password"])
     else:
@@ -51,7 +51,7 @@ def perform_register(username, password):
 
 @api_view(['POST'])
 def login(request):
-    print "Received login request."
+    log("Received login request.")
     if "username" in request.POST and "password" in request.POST:
         return perform_login(request.POST["username"], request.POST["password"])
     else:

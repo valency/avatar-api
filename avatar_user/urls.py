@@ -1,17 +1,12 @@
-from django.conf.urls import url, include
-from rest_framework import routers
+from django.conf.urls import url
 
-import views
-
-router = routers.DefaultRouter()
-router.register(r'account', views.AccountViewSet)
+from avatar_user.views import *
 
 urlpatterns = [
-    url(r'', include(router.urls)),
-    url(r'sign-in/$', views.login),
-    url(r'register/$', views.register),
-    url(r'register-or-login/$', views.login_or_register),
-    url(r'password/$', views.change_password),
-    url(r'verify/$', views.verify),
-    url(r'get_all_users/$', views.get_all_users)
+    url(r'sign-in/$', login),
+    url(r'register/$', register),
+    url(r'register-or-login/$', login_or_register),
+    url(r'password/$', change_password),
+    url(r'verify/$', verify),
+    url(r'get_all_users/$', get_all_users)
 ]

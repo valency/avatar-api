@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from models import *
+from avatar_core.models import *
 
 
 class PointSerializer(serializers.ModelSerializer):

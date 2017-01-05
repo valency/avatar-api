@@ -1,5 +1,7 @@
 import math
 
+from avatar.common import *
+
 
 class Region:
     def __init__(self):
@@ -97,7 +99,7 @@ class Distance:
         p_set = road["p"]
         location = Distance.point_location(p, road)
         if location is None:
-            print "Point not on road!"
+            log("WARNING: Point not on road!", "yellow")
             raise IOError
         length = 0.0
         for i in range(location):

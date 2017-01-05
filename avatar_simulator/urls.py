@@ -1,11 +1,8 @@
 from django.conf.urls import url
-from rest_framework import routers
 
-import views
-
-router = routers.DefaultRouter()
+from avatar_simulator.views import *
 
 urlpatterns = [
-    url(r'generate_syn_traj/$', views.generate_synthetic_trajectory),
-    url(r'refactor_syn_traj/$', views.refactor_synthetic_trajectory)
+    url(r'generate_syn_traj/$', generate_synthetic_trajectory),
+    url(r'refactor_syn_traj/$', refactor_synthetic_trajectory)
 ]

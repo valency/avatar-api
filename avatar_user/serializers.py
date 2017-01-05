@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from models import *
+from avatar_user.models import *
 
 
 class AccountSerializer(serializers.ModelSerializer):

@@ -1,13 +1,11 @@
-import uuid
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from avatar_core.cache import *
-from hmm import *
-from models import *
+from avatar_map_matching.hmm import *
+from avatar_map_matching.models import *
 
 
 @api_view(['GET'])
@@ -30,7 +28,7 @@ def find_candidate_road_by_p(request):
             else:
                 break
         end = time.time()
-        print "Finding candidate roads takes " + str(end - start) + " seconds..."
+        log("Finding candidate roads takes " + str(end - start) + " seconds.")
         return Response(candidate_rids)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -54,7 +52,7 @@ def map_matching(request):
         # traj.path = path
         # traj.save()
         end = time.time()
-        print "Map matching task takes " + str(end - start) + " seconds..."
+        log("Map matching task takes " + str(end - start) + " seconds.")
         return Response({
             # "traj": TrajectorySerializer(traj).data,
             "path": HMM_RESULT[request.GET['id']],
@@ -80,8 +78,8 @@ def reperform_map_matching(request):
         pids = request.GET['pid'].split(",")
         rids = request.GET['rid'].split(",")
         if settings.DEBUG:
-            print request.GET['pid']
-            print "There are " + str(len(pids)) + " points in the query set..."
+            log(request.GET['pid'])
+            log("There are " + str(len(pids)) + " points in the query set.")
         if len(pids) != len(rids):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         traj = Trajectory.objects.get(id=request.GET['id'])
@@ -90,15 +88,15 @@ def reperform_map_matching(request):
         # user = Account.objects.get(id=request.GET['uid'])
         # Insert the query pair into user action history
         # try:
-            # action_list = UserActionHistory.objects.get(user=user, traj=traj)
-            # try:
-                # action = action_list.action.get(point=sample)
-                # action.delete()
-            # except ObjectDoesNotExist:
-                # pass
+        # action_list = UserActionHistory.objects.get(user=user, traj=traj)
+        # try:
+        # action = action_list.action.get(point=sample)
+        # action.delete()
         # except ObjectDoesNotExist:
-            # action_list = UserActionHistory(user=user, traj=traj)
-            # action_list.save()
+        # pass
+        # except ObjectDoesNotExist:
+        # action_list = UserActionHistory(user=user, traj=traj)
+        # action_list.save()
         # action = Action(point=sample, road=road)
         # action.save()
         # action_list.action.add(action)
@@ -116,14 +114,14 @@ def reperform_map_matching(request):
             for j in range(len(p_list)):
                 if p_list[j]["id"] == pids[i]:
                     USER_HISTORY[request.GET['uid']][request.GET['id']][j] = rids[i]
-        # action_set = dict()
-        # p_list = traj.trace.p.all().order_by("t")
-        # for action in action_list.action.all():
-            # for i in range(len(p_list)):
-                # if p_list[i].id == action.point.id:
+                    # action_set = dict()
+                    # p_list = traj.trace.p.all().order_by("t")
+                    # for action in action_list.action.all():
+                    # for i in range(len(p_list)):
+                    # if p_list[i].id == action.point.id:
                     # action_set[i] = action.road.id
         if settings.DEBUG:
-            print USER_HISTORY[request.GET['uid']][request.GET['id']]
+            log(USER_HISTORY[request.GET['uid']][request.GET['id']])
         hmm = HmmMapMatching()
         start = time.time()
         hmm_result = hmm.reperform_map_matching(road_network, trace, candidate_rank, USER_HISTORY[request.GET['uid']][request.GET['id']])
@@ -132,7 +130,7 @@ def reperform_map_matching(request):
         # traj.path = path
         # traj.save()
         end = time.time()
-        print "Reperforming map matching task takes " + str(end - start) + " seconds..."
+        log("Reperforming map matching task takes " + str(end - start) + " seconds.")
         return Response({
             "path": HMM_RESULT[request.GET['id']],
             "emission_prob": hmm_result["emission_prob"],

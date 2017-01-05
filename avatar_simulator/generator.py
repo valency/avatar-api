@@ -1,6 +1,5 @@
 import random
 import uuid
-from datetime import *
 
 from avatar_map_matching.hmm import *
 
@@ -40,7 +39,7 @@ def shortest_path_generator(road_network, graph, start, end, num_edge, prev_rid)
                 if prev_rid is None or rid != prev_rid:
                     target_set.append(path_index)
         if settings.DEBUG:
-            print "There are " + str(len(target_set)) + " trajectories to choose from..."
+            log("There are " + str(len(target_set)) + " trajectories to choose from...")
         if len(target_set) == 0:
             path = None
             target = None
@@ -67,8 +66,8 @@ def initial_point(ini_road):
     ini_lng = p_set[ini_location]["lng"] + ini_bias * (p_set[ini_location + 1]["lng"] - p_set[ini_location]["lng"])
     ini_p = {"lat": ini_lat, "lng": ini_lng}
     if settings.DEBUG:
-        print "Initial point is between " + str(ini_location) + "th shape point(" + str(p_set[ini_location]["lat"]) + "," + str(p_set[ini_location]["lng"]) + ") and " + str(ini_location + 1) + "th shape point(" + str(p_set[ini_location + 1]["lat"]) + "," + str(p_set[ini_location + 1]["lng"]) + ") on road " + str(ini_road["id"]) + "..."
-        print "Point location is (" + str(ini_p["lat"]) + "," + str(ini_p["lng"]) + ")"
+        log("Initial point is between " + str(ini_location) + "th shape point(" + str(p_set[ini_location]["lat"]) + "," + str(p_set[ini_location]["lng"]) + ") and " + str(ini_location + 1) + "th shape point(" + str(p_set[ini_location + 1]["lat"]) + "," + str(p_set[ini_location + 1]["lng"]) + ") on road " + str(ini_road["id"]) + "...")
+        log("Point location is (" + str(ini_p["lat"]) + "," + str(ini_p["lng"]) + ")")
     return [ini_p, ini_location]
 
 
@@ -78,7 +77,7 @@ def travel_direction(road, sec):
     elif sec["p"]["lat"] == road["p"][len(road["p"]) - 1]["lat"] and sec["p"]["lng"] == road["p"][len(road["p"]) - 1]["lng"]:
         return 1
     else:
-        print "Input intersection not on input road!"
+        log("Input intersection not on input road!")
         raise IOError
 
 
@@ -92,25 +91,25 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
     else:
         long_seg = 0
     if settings.DEBUG:
-        print "Before moving, travel direction is " + str(d)
-        print "Before moving, next point index is " + str(next_l)
+        log("Before moving, travel direction is " + str(d))
+        log("Before moving, next point index is " + str(next_l))
     next_lat = None
     next_lng = None
     while distance > 0:
         if settings.DEBUG:
-            print "Current location is (" + str(point["lat"]) + "," + str(point["lng"]) + ")..."
+            log("Current location is (" + str(point["lat"]) + "," + str(point["lng"]) + ")...")
         # Will not reach the next shape point
         if distance <= Distance.earth_dist(point, p_set[next_l]):
             if settings.DEBUG:
-                print "Will not reach the next shape point..."
+                log("Will not reach the next shape point...")
             if long_seg == 1:
                 if settings.DEBUG:
-                    print "Length of road " + str(road["id"]) + " is " + str(road["length"]) + " (too long)"
+                    log("Length of road " + str(road["id"]) + " is " + str(road["length"]) + " (too long)")
                 # Current segment is too long, no need to stay on it
                 remain_dis = distance
             else:
                 if settings.DEBUG:
-                    print "Length of road " + str(road["id"]) + " is " + str(road["length"])
+                    log("Length of road " + str(road["id"]) + " is " + str(road["length"]))
                 # Randomly decide the remaining distance of the last road segment
                 remain_dis = random.randint(int(distance) / 2, int(distance))
             k = remain_dis / Distance.earth_dist(point, p_set[next_l])
@@ -118,16 +117,16 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
             next_lng = point["lng"] + k * (p_set[next_l]["lng"] - point["lng"])
             distance = 0
             if settings.DEBUG:
-                print "Finally stays between " + str(location) + "th shape point(" + str(p_set[location]["lat"]) + "," + str(p_set[location]["lng"]) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
+                log("Finally stays between " + str(location) + "th shape point(" + str(p_set[location]["lat"]) + "," + str(p_set[location]["lng"]) + ") and " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "...")
         else:
             distance -= Distance.earth_dist(point, p_set[next_l])
             point = p_set[next_l]
             if settings.DEBUG:
-                print "The location of next intersection is (" + str(next_sec["p"]["lat"]) + "," + str(next_sec["p"]["lng"]) + ")"
+                log("The location of next intersection is (" + str(next_sec["p"]["lat"]) + "," + str(next_sec["p"]["lng"]) + ")")
             # Should move to the next road
             if point["lat"] == next_sec["p"]["lat"] and point["lng"] == next_sec["p"]["lng"]:
                 if settings.DEBUG:
-                    print "Reached to " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
+                    log("Reached to " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "...")
                 path_index += 1
                 rid = path[1][path_index]
                 road = road_network["roads"][rid]
@@ -141,40 +140,40 @@ def next_point(road_network, path, point, road, location, next_sec, path_index, 
                 temp_sec = None
                 for sec in road["intersection"]:
                     if settings.DEBUG:
-                        print sec["id"] + ":" + str(sec["p"]["lat"]) + "," + str(sec["p"]["lng"])
+                        log(sec["id"] + ":" + str(sec["p"]["lat"]) + "," + str(sec["p"]["lng"]))
                     if sec["p"]["lat"] == next_sec["p"]["lat"] and sec["p"]["lng"] == next_sec["p"]["lng"]:
                         connected = 1
                     else:
                         temp_sec = sec
                 if connected == 0:
-                    print "Next road is not connected with previous road!"
+                    log("Next road is not connected with previous road!")
                     raise IOError
                 next_sec = temp_sec
                 d = travel_direction(road, next_sec)
                 if settings.DEBUG:
-                    print d
+                    log(d)
                 if d == 1:
                     next_l = 1
                 elif d == -1:
                     next_l = len(p_set) - 2
                 else:
-                    print "Something is wrong while calculating direction!"
+                    log("Something is wrong while calculating direction!")
                     raise IOError
                 if settings.DEBUG:
-                    print "Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d]["lat"]) + "," + str(p_set[next_l - d]["lng"]) + ") on road " + str(road["id"]) + "..."
-                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
+                    log("Switching to " + str(next_l - d) + "th shape point(" + str(p_set[next_l - d]["lat"]) + "," + str(p_set[next_l - d]["lng"]) + ") on road " + str(road["id"]) + "...")
+                    log("Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "...")
             # Stick to the current road
             else:
                 next_l += d
                 if settings.DEBUG:
-                    print "Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "..."
+                    log("Traveling towards " + str(next_l) + "th shape point(" + str(p_set[next_l]["lat"]) + "," + str(p_set[next_l]["lng"]) + ") on road " + str(road["id"]) + "...")
             location = next_l - int(0.5 * d + 0.5)
     next_p = {"lat": next_lat, "lng": next_lng}
     if settings.DEBUG:
-        print "Point location is (" + str(next_p["lat"]) + "," + str(next_p["lng"]) + ")"
+        log("Point location is (" + str(next_p["lat"]) + "," + str(next_p["lng"]) + ")")
     dis_to_go = abs(Distance.length_to_start(next_p, road) - Distance.length_to_start(next_sec["p"], road))
     if settings.DEBUG:
-        print "Remaining distance on this road is " + str(dis_to_go)
+        log("Remaining distance on this road is " + str(dis_to_go))
     return [next_p, road, location, path_index, next_sec, move_path]
 
 
@@ -213,14 +212,14 @@ def add_random_noise(point, shake, bound):
 
 def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, start, end, num_edge, shake, missing_rate):
     if settings.DEBUG:
-        print "Building road network graph..."
+        log("Building road network graph...")
     graph = json_graph.node_link_graph(road_network["graph"])
     traj_set = []
     ground_truth = []
     path_len = []
     for i in range(num_traj):
         if settings.DEBUG:
-            print "Generating the " + str(i + 1) + "th trajectory..."
+            log("Generating the " + str(i + 1) + "th trajectory...")
         traj_rids = []
         # Generate trajectory information
         taxi_id = str(uuid.uuid4())
@@ -263,11 +262,11 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                     neighbor = networkx.single_source_shortest_path(graph, start["id"], 1)
                     # road_set = road_network.roads.filter(intersection__id__exact=start.id)
                     if settings.DEBUG:
-                        print neighbor
+                        log(neighbor)
                     if len(neighbor) == 1:
                         rebuild = True
                         if settings.DEBUG:
-                            print "The shortest path has to turn around, aborting..."
+                            log("The shortest path has to turn around, aborting...")
                     # Make sure the path does not turn around
                     else:
                         sub_path, target = shortest_path_generator(road_network, graph, start, end, 50, prev_rid)
@@ -275,7 +274,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
                             rebuild = True
                         else:
                             if sub_path[1][0] == path[1][len(path[1]) - 1]:
-                                print "Wrong path selected!"
+                                log("Wrong path selected!")
                                 raise IOError
                             start = road_network["intersections"][target]
                             remain_num_edge -= 50
@@ -291,7 +290,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             path.reverse()
         # Generate the first sample
         if settings.DEBUG:
-            print "Generating the first sample..."
+            log("Generating the first sample...")
         ini_sample_id = str(uuid.uuid4())
         ini_time = time_generator()
         ini_r_index = 0
@@ -328,7 +327,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
             ini_sec = prev_secset[0]
             prev_sec = prev_secset[1]
         else:
-            "First road is not connected with second road!"
+            log("First road is not connected with second road!")
             raise IOError
         d = travel_direction(prev_road, prev_sec)
         prev_l = ini_p[1]
@@ -337,11 +336,11 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         ini_dis = abs(Distance.length_to_start(ini_p[0], ini_road) - Distance.length_to_start(ini_sec["p"], ini_road))
         avg_length = int((path[0] - ini_dis) / (num_sample - 1))
         if settings.DEBUG:
-            print "Average length between each two sample is " + str(avg_length)
+            log("Average length between each two sample is " + str(avg_length))
         current_sample_num = 0
         for j in range(num_sample - 1):
             if settings.DEBUG:
-                print "Generating the " + str(current_sample_num + 2) + "th sample..."
+                log("Generating the " + str(current_sample_num + 2) + "th sample...")
             # Generate the next sample
             next_p = next_point(road_network, path, prev_p, prev_road, prev_l, prev_sec, prev_path_index, avg_length)
             time_interval = sample_rate + random.randint(0, 10)
@@ -378,7 +377,7 @@ def synthetic_traj_generator(road_network, num_traj, num_sample, sample_rate, st
         path_len.append(path[0])
         ground_truth.append(traj_rids)
         if settings.DEBUG:
-            print path
+            log(path)
         # Reset the temporal variable for generating next trajectory
         start = ini_start
     return [traj_set, ground_truth, path_len]

@@ -1,21 +1,15 @@
 import csv
-import uuid
-from datetime import datetime
 
 import networkx
-from celery.result import AsyncResult
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Max, Min
-from django.http import HttpResponse
-from networkx.readwrite import json_graph
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from cache import *
-from geometry import *
-from serializers import *
+from avatar_core.cache import *
+from avatar_core.map import *
 
 MAP_UPLOAD_DIR = "/var/www/html/avatar/data/map/"
 TRAJ_UPLOAD_DIR = "/var/www/html/avatar/data/trajectory/"
@@ -41,25 +35,6 @@ def init_road_network_in_memory(request):
 
 
 @api_view(['GET'])
-def demo_result(request):
-    if 'id' in request.GET:
-        result = AsyncResult(request.GET["id"])
-        if result.ready():
-            return Response({"status": result.ready(), "result": result.get()})
-        else:
-            return Response({"status": result.ready()})
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def demo(request):
-    from tasks import heavy_task
-    task = heavy_task.delay()
-    return Response({"task_id": task.task_id})
-
-
-@api_view(['GET'])
 def add_traj_from_local_file(request):
     if 'src' in request.GET:
         try:
@@ -70,7 +45,7 @@ def add_traj_from_local_file(request):
                 reader = csv.DictReader(csv_file)
                 line_count = 0
                 for row in sorted(reader, key=lambda d: (d['taxi'], d['t'])):
-                    print "\rImporting Row: " + str(line_count),
+                    log("\rImporting row: " + str(line_count)),
                     line_count += 1
                     if traj is None or row['taxi'] != traj.taxi:
                         if traj is not None:
@@ -97,7 +72,7 @@ def add_traj_from_local_file(request):
             # Save the last trajectory
             traj.save()
             end = time.time()
-            print "Importing trajectory task takes " + str(end - start) + " seconds..."
+            log("Importing trajectory task takes " + str(end - start) + " seconds.")
             return Response({"ids": ids})
         except IOError:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -113,7 +88,7 @@ def create_road_network_from_local_file(request):
         for ii in intersections:
             if ii.p.lat == pp.lat and ii.p.lng == pp.lng:
                 return ii
-        ii = Intersection(id=uuid.uuid4(), p=pp)
+        ii = Intersection(id=str(uuid.uuid4()), p=pp)
         ii.save()
         intersections.append(ii)
         return ii
@@ -124,7 +99,7 @@ def create_road_network_from_local_file(request):
         try:
             rr.intersection.add(ii)
         except IntegrityError:
-            print "Warning: road " + road.id + " has only one intersection"
+            log("WARNING: Road " + road.id + " has only one intersection!", "yellow")
             pass
         # Calculate road length
         rr.length = int(Distance.road_length(RoadSerializer(rr).data))
@@ -142,7 +117,7 @@ def create_road_network_from_local_file(request):
                 road = None
                 line_count = 0
                 for row in reader:
-                    print "\rImporting Row: " + str(line_count),
+                    log("\rImporting row: " + str(line_count)),
                     line_count += 1
                     road_id = city + "-" + row["roadid"] + "-" + row["partid"]
                     p = Point(lat=float(row["lat"]), lng=float(row["lng"]))
@@ -168,7 +143,7 @@ def create_road_network_from_local_file(request):
             # Save the road network
             road_network.save()
             end = time.time()
-            print "Creating road network task takes " + str(end - start) + " seconds..."
+            log("Creating road network task takes " + str(end - start) + " seconds.")
             return Response({
                 "road_network_id": road_network.id,
                 "road_network_name": road_network.city,
@@ -338,10 +313,12 @@ def export_road_network_to_local_file(request):
         road_network_id = request.GET["id"]
         road_network = RoadNetwork.objects.get(id=road_network_id)
         file_name = "avatar-road-network-" + road_network.city + "-" + road_network_id + ".json"
-        content = json.dumps(get_road_network_by_id(road_network_id))
-        response = HttpResponse(content, content_type='text/json')
-        response['Content-Disposition'] = "attachment; filename=" + file_name
-        return response
+        f = open(MAP_UPLOAD_DIR + file_name, "w")
+        f.write(get_road_network_by_id(road_network_id))
+        f.close()
+        return Response({
+            "filename": file_name
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -352,10 +329,10 @@ def create_grid_index_by_road_network_id(request):
         start = time.time()
         road_network = RoadNetwork.objects.get(id=request.GET["id"])
         road_network.grid_cells.clear()
-        grid_count = 100
+        grid_count = 10
         if "grid" in request.GET:
             grid_count = int(request.GET["grid"])
-        print "Finding the boundary of the road network..."
+        log("Finding the boundary of the road network...")
         lat_min = road_network.roads.aggregate(Min("p__lat"))["p__lat__min"]
         lat_max = road_network.roads.aggregate(Max("p__lat"))["p__lat__max"]
         lng_min = road_network.roads.aggregate(Min("p__lng"))["p__lng__min"]
@@ -364,7 +341,7 @@ def create_grid_index_by_road_network_id(request):
         minp.save()
         maxp = Point(lat=lat_max, lng=lng_max)
         maxp.save()
-        print "Creating grid cells in database..."
+        log("Creating grid cells in database...")
         unit_lat = (maxp.lat - minp.lat) / grid_count
         unit_lng = (maxp.lng - minp.lng) / grid_count
         for i in range(grid_count):
@@ -374,7 +351,7 @@ def create_grid_index_by_road_network_id(request):
                 grid = GridCell(lat_id=i, lng_id=j, area=rect)
                 grid.save()
                 road_network.grid_cells.add(grid)
-        print "Adding roads to grid cells..."
+        log("Adding roads to grid cells...")
         for road in road_network.roads.all():
             for p in list(road.p.all()):
                 i = int((p.lat - minp.lat) / unit_lat)
@@ -385,14 +362,14 @@ def create_grid_index_by_road_network_id(request):
                     j = grid_count - 1
                 grid = road_network.grid_cells.get(lat_id=i, lng_id=j)
                 grid.roads.add(road)
-        print "Updating the road network..."
+        log("Updating the road network...")
         road_network.pmax = maxp
         road_network.pmin = minp
         road_network.grid_lat_count = grid_count
         road_network.grid_lng_count = grid_count
         road_network.save()
         end = time.time()
-        print "Creating grid index task takes " + str(end - start) + " seconds..."
+        log("Creating grid index task takes " + str(end - start) + " seconds...")
         return Response({
             "grid_cell_count": grid_count
         })
@@ -429,11 +406,11 @@ def create_graph_by_road_network_id(request):
             if len(intersections) >= 2:
                 graph.add_edge(intersections[0].id, intersections[1].id, weight=road.length, id=road.id)
             else:
-                print "WARNING: # of intersections of road " + str(road.id) + " is less than 2. This road will be ignored in the graph."
+                log("WARNING: # of intersections of road " + str(road.id) + " is less than 2. This road will be ignored in the graph.", "yellow")
         road_network.graph = json.dumps(json_graph.node_link_data(graph))
         road_network.save()
         end = time.time()
-        print "Creating graph task takes " + str(end - start) + " seconds..."
+        log("Creating graph task takes " + str(end - start) + " seconds.")
         return Response(status=status.HTTP_201_CREATED)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -449,7 +426,7 @@ def create_shortest_path_index(request):
         road_network.shortest_path_index = json.dumps(index)
         road_network.save()
         end = time.time()
-        print "Creating shortest path index task takes " + str(end - start) + " seconds..."
+        log("Creating shortest path index task takes " + str(end - start) + " seconds.")
         return Response(status=status.HTTP_201_CREATED)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -460,5 +437,86 @@ def get_graph_by_road_network_id(request):
     if 'id' in request.GET:
         road_network = RoadNetwork.objects.get(id=request.GET["id"])
         return Response(json.loads(road_network.graph))
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def transplant_road_network(request):
+    merged_secs = dict()
+
+    def find_orig_intersection_id(sec1, sec2, road):
+        sec_map = dict()
+        for sec in road.intersection.all():
+            if sec1 in merged_secs and sec.id in merged_secs[sec1]:
+                sec_map[sec.id] = sec1
+            elif sec2 in merged_secs and sec.id in merged_secs[sec2]:
+                sec_map[sec.id] = sec2
+            else:
+                sec_map[sec.id] = sec.id
+        return sec_map
+
+    def check_intersection_by_p(p, road):
+        for sec in road.intersection.all():
+            if p.lat == sec.p.lat and p.lng == sec.p.lng:
+                return sec.id
+        return None
+
+    if 'id' in request.GET:
+        road_network = RoadNetwork.objects.get(id=request.GET["id"])
+        eps = 20.0
+        min_samples = 2
+        sub_cluster_bound = 5.0
+        if 'eps' in request.GET:
+            eps = float(request.GET["eps"])
+        if 'sample' in request.GET:
+            min_sample = int(request.GET["sample"])
+        if 'bound' in request.GET:
+            sub_cluster_bound = float(request.GET["bound"])
+        graph_t, merged_secs = merge_road_segments_by_road_network(road_network, eps, min_samples, sub_cluster_bound)
+        city = road_network.city + "_fixed"
+        road_network_t = RoadNetwork(city=city)
+        road_network_t.save()
+        # Append all intersections
+        for node in graph_t.nodes():
+            intersection = Intersection.objects.get(id=node)
+            road_network_t.intersections.add(intersection)
+        # Fix and append all roads
+        for edge in graph_t.edges():
+            road_id = graph_t.get_edge_data(edge[0], edge[1])["id"]
+            road = road_network.roads.get(id=road_id)
+            road_id_t = road_id + "_fixed"
+            road_t = Road(id=road_id_t)
+            road_t.save()
+            road_network_t.roads.add(road_t)
+            # Add intersections
+            for id in edge:
+                sec_t = Intersection.objects.get(id=id)
+                road_t.intersection.add(sec_t)
+            # Check whether the two intersections are merged
+            sec_map = find_orig_intersection_id(edge[0], edge[1], road)
+            # Modify points and add
+            for p in road.p.all():
+                sec_id = check_intersection_by_p(p, road)
+                # This point is an intersection
+                if sec_id is not None:
+                    loc_sec = Intersection.objects.get(id=sec_map[sec_id])
+                    p_t = Point(lat=loc_sec.p.lat, lng=loc_sec.p.lng)
+                # This point is not an intersection
+                else:
+                    p_t = Point(lat=p.lat, lng=p.lng)
+                p_t.save()
+                road_t.p.add(p_t)
+            # Calculate road length
+            road_t.length = int(Distance.road_length(RoadSerializer(road_t).data))
+            road_t.save()
+        # Save the road network
+        road_network_t.save()
+        return Response({
+            "road_network_id": road_network_t.id,
+            "road_network_name": road_network_t.city,
+            "road_count": road_network_t.roads.count(),
+            "intersection_count": road_network_t.intersections.count()
+        })
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

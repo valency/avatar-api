@@ -1,9 +1,8 @@
 import json
 import time
 
-from django.utils.termcolors import colorize
-
-from serializers import *
+from avatar.common import *
+from avatar_core.serializers import *
 
 ROAD_NETWORK = dict()
 HMM_RESULT = dict()
@@ -11,13 +10,13 @@ USER_HISTORY = dict()
 
 
 def get_road_network_by_id(road_network_id):
-    if not ROAD_NETWORK.has_key(road_network_id):
+    if road_network_id not in ROAD_NETWORK:
         ROAD_NETWORK[road_network_id] = create_road_network_dict(road_network_id)
     return ROAD_NETWORK[road_network_id]
 
 
 def create_road_network_dict(road_network_id):
-    print colorize("Creating cache for road network " + road_network_id + "...", fg="green")
+    log("Creating cache for road network " + road_network_id + "...")
     start = time.time()
     road_network = RoadNetwork.objects.get(id=road_network_id)
     road_network_data = RoadNetworkSerializer(road_network).data
@@ -49,13 +48,14 @@ def create_road_network_dict(road_network_id):
     else:
         road_network_dict["shortest_path_index"] = None
     end = time.time()
-    print "Saving road network to memory takes " + str(end - start) + " seconds..."
+    log("Saving road network to memory takes " + str(end - start) + " seconds.")
     return road_network_dict
+
 
 def get_traj_by_id(traj_id):
     traj = Trajectory.objects.get(id=traj_id)
     traj = TrajectorySerializer(traj).data
-    if HMM_RESULT.has_key(traj_id):
+    if traj_id in HMM_RESULT:
         traj["path"] = HMM_RESULT[traj_id]
         for fragment in traj["path"]["road"]:
             road = Road.objects.get(id=fragment["road"]["id"])

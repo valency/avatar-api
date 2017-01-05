@@ -1,10 +1,10 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from synthetic_traj_generator import *
 from avatar_core.cache import *
-from django.core.exceptions import ObjectDoesNotExist
+from avatar_simulator.generator import *
 
 
 @api_view(['GET'])
@@ -35,7 +35,7 @@ def generate_synthetic_trajectory(request):
         traj_id = []
         for traj in result[0]:
             traj_id.append(traj.id)
-        print "Finished!"
+        log("Finished!")
         return Response({
             "traj_id": traj_id,
             "ground_truth": result[1],

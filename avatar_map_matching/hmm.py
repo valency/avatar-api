@@ -1,5 +1,4 @@
 from decimal import Decimal
-import json
 
 import networkx
 from django.conf import settings
@@ -7,24 +6,23 @@ from networkx import NetworkXNoPath
 from networkx.readwrite import json_graph
 
 from avatar_core.geometry import *
-from models import *
-from django.core.cache import cache
+from avatar_map_matching.models import *
 
 
 def find_candidates_from_road(road_network, point):
     candidates = []
     rids = []
     if settings.DEBUG:
-        print "Calculating the size of a unit..."
+        log("Calculating the size of a unit...")
     unit_lat = (road_network["pmax"]["lat"] - road_network["pmin"]["lat"]) / road_network["grid_lat_count"]
     unit_lng = (road_network["pmax"]["lng"] - road_network["pmin"]["lng"]) / road_network["grid_lng_count"]
     if point["lat"] < road_network["pmin"]["lat"] or point["lng"] < road_network["pmin"]["lng"] or point["lat"] > road_network["pmax"]["lat"] or point["lng"] > road_network["pmax"]["lng"]:
-        print "Warning: point out of bound!"
+        log("Warning: point out of bound!", "yellow")
     else:
         lat_index = int((point["lat"] - road_network["pmin"]["lat"]) / unit_lat)
         lng_index = int((point["lng"] - road_network["pmin"]["lng"]) / unit_lng)
         if settings.DEBUG:
-            print "The point is located in grid (" + str(lat_index) + "," + str(lng_index) + ")"
+            log("The point is located in grid (" + str(lat_index) + "," + str(lng_index) + ")")
         grid = road_network["grid_cells"][str(lat_index)][str(lng_index)]
         # grid_str = cache.get("avatar_road_network_" + road_network["city"] + "_grid_cell_" + str(lat_index) + "_" + str(lng_index))
         # grid = json.loads(grid_str)
@@ -49,7 +47,7 @@ def find_candidates_from_road(road_network, point):
                             rids.append(road["id"])
         candidates.sort(key=lambda x: x["dist"])
     if settings.DEBUG:
-        print "# of Candidates = " + str(len(candidates))
+        log("# of Candidates = " + str(len(candidates)))
     return candidates
 
 
@@ -87,36 +85,67 @@ def get_route_dist(graph, shortest_path_index, p1, road1, p2, road2):
         p2_cross = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(p_cross["p"], road2))
         return p1_cross + p2_cross, [road1["id"], road2["id"]]
     else:
-        # Compute all the possibilities between each intersections on the two roads
+        # Assume the shortest path is between the closest intersections between two roads
+        dist_between_sec = 16777215.0
         intersec1 = road1["intersection"]
         intersec2 = road2["intersection"]
-        min_length = 16777215.0
-        min_path = None
+        id1 = 0
+        id2 = 0
         for i in range(len(intersec1)):
             for j in range(len(intersec2)):
-                shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[i], intersec2[j])
-                if shortest_path[1] is not None:
-                    path = shortest_path[1]
-                    length = shortest_path[0]
-                    if shortest_path[1][0] != road1["id"]:
-                        path = [road1["id"]] + path
-                        sec1 = intersec1[i]
-                    else:
-                        length -= road1["length"]
-                        sec1 = intersec1[len(intersec1) - 1 - i]
-                    if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
-                        path = path + [road2["id"]]
-                        sec2 = intersec2[j]
-                    else:
-                        length -= road2["length"]
-                        sec2 = intersec2[len(intersec2) - 1 - j]
-                    dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(sec1["p"], road1))
-                    dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(sec2["p"], road2))
-                    length += dist1 + dist2
-                    if length < min_length:
-                        min_length = length
-                        min_path = path
-        return min_length, min_path
+                if Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"]) < dist_between_sec:
+                    dist_between_sec = Distance.earth_dist(intersec1[i]["p"], intersec2[j]["p"])
+                    id1 = i
+                    id2 = j
+        shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[id1], intersec2[id2])
+        if shortest_path[1] is not None:
+            dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(intersec1[id1]["p"], road1))
+            dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(intersec2[id2]["p"], road2))
+            path = shortest_path[1]
+            length = shortest_path[0]
+            if shortest_path[1][0] != road1["id"]:
+                path = [road1["id"]] + path
+            else:
+                length -= road1["length"]
+            if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
+                path = path + [road2["id"]]
+            else:
+                length -= road2["length"]
+            length += dist1 + dist2
+        else:
+            path = shortest_path[1]
+            length = shortest_path[0]
+        return length, path
+        # # Compute all the possibilities between each intersections on the two roads
+        # intersec1 = road1["intersection"]
+        # intersec2 = road2["intersection"]
+        # min_length = 16777215.0
+        # min_path = None
+        # for i in range(len(intersec1)):
+        #     for j in range(len(intersec2)):
+        #         shortest_path = find_path_from_index(graph, shortest_path_index, intersec1[i], intersec2[j])
+        #         if shortest_path[1] is not None:
+        #             path = shortest_path[1]
+        #             length = shortest_path[0]
+        #             if shortest_path[1][0] != road1["id"]:
+        #                 path = [road1["id"]] + path
+        #                 sec1 = intersec1[i]
+        #             else:
+        #                 length -= road1["length"]
+        #                 sec1 = intersec1[len(intersec1) - 1 - i]
+        #             if shortest_path[1][len(shortest_path[1]) - 1] != road2["id"]:
+        #                 path = path + [road2["id"]]
+        #                 sec2 = intersec2[j]
+        #             else:
+        #                 length -= road2["length"]
+        #                 sec2 = intersec2[len(intersec2) - 1 - j]
+        #             dist1 = abs(Distance.length_to_start(p1, road1) - Distance.length_to_start(sec1["p"], road1))
+        #             dist2 = abs(Distance.length_to_start(p2, road2) - Distance.length_to_start(sec2["p"], road2))
+        #             length += dist1 + dist2
+        #             if length < min_length:
+        #                 min_length = length
+        #                 min_path = path
+        # return min_length, min_path
 
 
 class HmmMapMatching:
@@ -137,22 +166,20 @@ class HmmMapMatching:
         prev_candidates = None
         rank = int(rank)
         if settings.DEBUG:
-            print "Setting HMM parameters..."
+            log("Setting HMM parameters...")
         count = 0
         # p_set = trace.p.all().order_by("t")
         p_list = trace["p"]
         p_list.sort(key=lambda d: d["t"])
         for p in p_list:
-            if settings.DEBUG:
-                print p["id"]
             # Find all candidate points of each point
             candidates = find_candidates_from_road(road_network, p["p"])
             # Save the emission distance and rid of each candidates
             if settings.DEBUG:
-                print "Saving emission distance of sample: " + str(count)
+                log("Saving emission distance of sample: " + str(count))
             if len(candidates) < rank:
                 if settings.DEBUG:
-                    print "# of candidates is less than rank = " + str(rank) + ", now add dummy values"
+                    log("# of candidates is less than rank = " + str(rank) + ", now add dummy values...")
                 for i in range(len(candidates), rank, 1):
                     candidates.append({
                         "dist": 16777215.0,
@@ -171,7 +198,7 @@ class HmmMapMatching:
             deltas.append(candidates[0]["dist"])
             # Save the transition distance between each two points
             if settings.DEBUG:
-                print "Saving transition distance between sample: " + str(count) + " and previous sample"
+                log("Saving transition distance between sample: " + str(count) + " and previous sample...")
             count += 1
             if prev_p is not None:
                 tran_p = []
@@ -204,7 +231,7 @@ class HmmMapMatching:
             prev_p = p["p"]
             prev_candidates = candidates
         if settings.DEBUG:
-            print "Calculating delta and beta..."
+            log("Calculating delta and beta...")
         deltas.sort()
         betas.sort()
         delta = 1.4826 * deltas[len(deltas) / 2]
@@ -227,7 +254,7 @@ class HmmMapMatching:
         else:
             transition_para = float("Inf")
         if settings.DEBUG:
-            print "Calculating eimission probabilities..."
+            log("Calculating eimission probabilities...")
         for zt in self.emission_dist:
             prob_t = []
             for xi in zt:
@@ -241,7 +268,7 @@ class HmmMapMatching:
                 prob_t.append(Decimal(tmp_eprob))
             self.emission_prob.append(prob_t)
         if settings.DEBUG:
-            print "Calculating transition probabilities..."
+            log("Calculating transition probabilities...")
         for zt in self.transition_dist:
             prob_dt = []
             for prev_xi in zt:
@@ -263,7 +290,7 @@ class HmmMapMatching:
         chosen_index = []
         ini_prob = []
         if settings.DEBUG:
-            print "Performing forward propagation..."
+            log("Performing forward propagation...")
         for first in self.emission_prob[0]:
             ini_prob.append(Decimal(first))
         self.map_matching_prob.append(ini_prob)
@@ -295,7 +322,7 @@ class HmmMapMatching:
         # if settings.DEBUG:
         # print self.map_matching_prob
         if settings.DEBUG:
-            print "Performing backward tracing..."
+            log("Performing backward tracing...")
         final_prob = self.map_matching_prob[len(self.map_matching_prob) - 1]
         final_index = final_prob.index(max(final_prob))
         final_rid = self.candidate_rid[len(self.candidate_rid) - 1][final_index]
@@ -318,7 +345,7 @@ class HmmMapMatching:
                 connect_routes.append(connect_route)
             # Reperform map matching
             else:
-                print "Impossible Error!"
+                log("Impossible Error!")
                 exit()
                 # prev_road = road_network["roads"][prev_rid]
                 # current_rid = self.candidate_rid[i][current_index]
@@ -333,8 +360,8 @@ class HmmMapMatching:
         hmm_path_dist.reverse()
         connect_routes.reverse()
         if settings.DEBUG:
-            print hmm_path_rids
-            print connect_routes
+            log(hmm_path_rids)
+            log(connect_routes)
         return [hmm_path_rids, connect_routes, hmm_path_dist, hmm_path_index, max(final_prob)]
 
     def hmm_with_label(self, road_network, graph, shortest_path_index, trace, rank, action_set, beta):
@@ -364,12 +391,12 @@ class HmmMapMatching:
                             self.transition_prob[p_index - 1][rank - 1][c] = tran_prob
                             self.transition_route[p_index - 1][rank - 1][c] = route[1]
                             if settings.DEBUG:
-                                print "Transition probability: " + str(tran_prob)
+                                log("Transition probability: " + str(tran_prob))
                 if p_index != len(p_list) - 1:
                     for c in range(rank):
                         if self.candidate_rid[p_index + 1][c] is not None:
                             if settings.DEBUG:
-                                print self.candidate_rid[p_index + 1]
+                                log(self.candidate_rid[p_index + 1])
                             next_road = road_network["roads"][self.candidate_rid[p_index + 1][c]]
                             next_p_map = Distance.point_map_to_road(p_list[p_index + 1]["p"], next_road)
                             route = get_route_dist(graph, shortest_path_index, p_map["mapped"], current_road, next_p_map["mapped"], next_road)
@@ -382,7 +409,7 @@ class HmmMapMatching:
                             self.transition_prob[p_index][rank - 1][c] = tran_prob
                             self.transition_route[p_index][rank - 1][c] = route[1]
                             if settings.DEBUG:
-                                print "Transition probability: " + str(tran_prob)
+                                log("Transition probability: " + str(tran_prob))
                 self.candidate_rid[p_index][rank - 1] = action_set[p_index]
                 r_index_set[p_index] = rank - 1
             else:
@@ -394,33 +421,34 @@ class HmmMapMatching:
                     if i == r_index_set[t]:
                         self.emission_prob[t][i] = 1.0
                         if settings.DEBUG:
-                            print self.candidate_rid[t][i]
+                            print
+                            self.candidate_rid[t][i]
                     else:
                         self.emission_prob[t][i] = 0.0
 
     def perform_map_matching(self, road_network, trace, rank):
         if settings.DEBUG:
-            print "Building road network graph..."
+            log("Building road network graph...")
         graph = json_graph.node_link_graph(road_network["graph"])
         shortest_path_index = road_network["shortest_path_index"]
         beta = self.hmm_prob_model(road_network, graph, shortest_path_index, trace, rank)
         if settings.DEBUG:
-            print "Implementing viterbi algorithm..."
+            log("Implementing viterbi algorithm...")
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
         return {'path': sequence[0], 'route': sequence[1], 'dist': sequence[2], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid, 'confidence': sequence[4]}
 
     def reperform_map_matching(self, road_network, trace, rank, action_set):
         if settings.DEBUG:
-            print "Building road network graph..."
+            log("Building road network graph...")
         graph = json_graph.node_link_graph(road_network["graph"])
         shortest_path_index = road_network["shortest_path_index"]
         beta = self.hmm_prob_model(road_network, graph, shortest_path_index, trace, rank)
         if settings.DEBUG:
-            print "Reperform map matching with human label..."
+            log("Reperform map matching with human label...")
         self.hmm_with_label(road_network, graph, shortest_path_index, trace, rank, action_set, beta)
         if settings.DEBUG:
-            print "Implementing viterbi algorithm..."
+            log("Implementing viterbi algorithm...")
         chosen_index = self.hmm_viterbi_forward()
         sequence = self.hmm_viterbi_backward(road_network, graph, shortest_path_index, trace, chosen_index)
         return {'path': sequence[0], 'route': sequence[1], 'path_index': sequence[3], 'emission_prob': self.emission_prob, 'transition_prob': self.transition_prob, 'candidate_rid': self.candidate_rid}
@@ -435,8 +463,8 @@ class HmmMapMatching:
             if i > 0:
                 if settings.DEBUG:
                     if not hmm_result['path'][i] == hmm_result['route'][i - 1][-1]:
-                        print self.map_matching_prob[i]
-                        print hmm_result['path'][i]
+                        log(self.map_matching_prob[i])
+                        log(hmm_result['path'][i])
             if i > 0 and len(hmm_result['route'][i - 1]) > 1:
                 road_index = ','.join(map(str, p_index))
                 hmm_path["road"][len(hmm_path["road"]) - 1]["p"] = road_index
