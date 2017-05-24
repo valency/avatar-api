@@ -1,5 +1,4 @@
 import json
-import time
 
 from avatar.common import *
 from avatar_core.serializers import *
@@ -17,7 +16,7 @@ def get_road_network_by_id(road_network_id):
 
 def create_road_network_dict(road_network_id):
     log("Creating cache for road network " + road_network_id + "...")
-    start = time.time()
+    start = datetime.now()
     road_network = RoadNetwork.objects.get(id=road_network_id)
     road_network_data = RoadNetworkSerializer(road_network).data
     # Re-construct the road network into dictionary
@@ -47,8 +46,8 @@ def create_road_network_dict(road_network_id):
         road_network_dict["shortest_path_index"] = json.loads(road_network_data["shortest_path_index"])
     else:
         road_network_dict["shortest_path_index"] = None
-    end = time.time()
-    log("Saving road network to memory takes " + str(end - start) + " seconds.")
+    end = datetime.now()
+    log("Saving road network to memory takes " + str((end - start).total_seconds()) + " seconds.")
     return road_network_dict
 
 
