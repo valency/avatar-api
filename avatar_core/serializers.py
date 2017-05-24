@@ -6,11 +6,13 @@ from avatar_core.models import *
 class PointSerializer(serializers.ModelSerializer):
     class Meta:
         model = Point
+        fields = '__all__'
 
 
 class SampleMetaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SampleMeta
+        fields = '__all__'
 
 
 class SampleSerializer(serializers.ModelSerializer):
@@ -20,6 +22,7 @@ class SampleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sample
+        fields = '__all__'
 
 
 class IntersectionSerializer(serializers.ModelSerializer):
@@ -27,6 +30,7 @@ class IntersectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Intersection
+        fields = '__all__'
 
 
 class RoadSerializer(serializers.ModelSerializer):
@@ -35,6 +39,7 @@ class RoadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Road
+        fields = '__all__'
 
 
 class TraceSerializer(serializers.ModelSerializer):
@@ -42,6 +47,7 @@ class TraceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trace
+        fields = '__all__'
 
 
 class PathFragmentSerializer(serializers.ModelSerializer):
@@ -49,6 +55,7 @@ class PathFragmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PathFragment
+        fields = '__all__'
 
 
 class PathSerializer(serializers.ModelSerializer):
@@ -56,6 +63,7 @@ class PathSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Path
+        fields = '__all__'
 
 
 class TrajectorySerializer(serializers.ModelSerializer):
@@ -64,11 +72,13 @@ class TrajectorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trajectory
+        fields = '__all__'
 
 
 class RectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rect
+        fields = '__all__'
 
 
 class GridCellSerializer(serializers.ModelSerializer):
@@ -78,6 +88,7 @@ class GridCellSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GridCell
+        fields = '__all__'
 
 
 class RoadNetworkSerializer(serializers.ModelSerializer):
@@ -89,3 +100,4 @@ class RoadNetworkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RoadNetwork
+        fields = '__all__'
