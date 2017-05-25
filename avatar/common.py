@@ -4,7 +4,7 @@ from django.utils.termcolors import colorize
 
 
 def log(msg, color="green"):
-    print(colorize("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "] " + msg, fg=color))
+    print(colorize("[" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "] " + str(msg), fg=color))
 
 
 def get_client_ip(request):
