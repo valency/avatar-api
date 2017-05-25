@@ -12,7 +12,7 @@ from avatar_map_matching.models import *
 def find_candidate_road_by_p(request):
     if 'city' in request.GET and 'lat' in request.GET and 'lng' in request.GET:
         # city = RoadNetwork.objects.get(id=request.GET['city'])
-        start = time.time()
+        start = datetime.now()
         road_network = get_road_network_by_id(request.GET['city'])
         p = {"lat": float(request.GET['lat']), "lng": float(request.GET['lng'])}
         dist = 500.0
@@ -27,8 +27,8 @@ def find_candidate_road_by_p(request):
                 candidate_rids.append(candidate["rid"])
             else:
                 break
-        end = time.time()
-        log("Finding candidate roads takes " + str(end - start) + " seconds.")
+        end = datetime.now()
+        log("Finding candidate roads takes " + str((end - start).total_seconds()) + " seconds.")
         return Response(candidate_rids)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -45,14 +45,14 @@ def map_matching(request):
         traj = Trajectory.objects.get(id=request.GET['id'])
         trace = TraceSerializer(traj.trace).data
         hmm = HmmMapMatching()
-        start = time.time()
+        start = datetime.now()
         hmm_result = hmm.perform_map_matching(road_network, trace, candidate_rank)
         HMM_RESULT[request.GET['id']] = hmm.generate_hmm_path(trace["id"], hmm_result)
         # path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
         # traj.path = path
         # traj.save()
-        end = time.time()
-        log("Map matching task takes " + str(end - start) + " seconds.")
+        end = datetime.now()
+        log("Map matching task takes " + str((end - start).total_seconds()) + " seconds.")
         return Response({
             # "traj": TrajectorySerializer(traj).data,
             "path": HMM_RESULT[request.GET['id']],
@@ -123,14 +123,14 @@ def reperform_map_matching(request):
         if settings.DEBUG:
             log(USER_HISTORY[request.GET['uid']][request.GET['id']])
         hmm = HmmMapMatching()
-        start = time.time()
+        start = datetime.now()
         hmm_result = hmm.reperform_map_matching(road_network, trace, candidate_rank, USER_HISTORY[request.GET['uid']][request.GET['id']])
         HMM_RESULT[request.GET['id']] = hmm.generate_hmm_path(trace["id"], hmm_result)
         # path = hmm.save_hmm_path_to_database(city, trace["id"], hmm_result)
         # traj.path = path
         # traj.save()
-        end = time.time()
-        log("Reperforming map matching task takes " + str(end - start) + " seconds.")
+        end = datetime.now()
+        log("Reperforming map matching task takes " + str((end - start).total_seconds()) + " seconds.")
         return Response({
             "path": HMM_RESULT[request.GET['id']],
             "emission_prob": hmm_result["emission_prob"],
